@@ -18,6 +18,7 @@ type Deck = {
 };
 
 type View = "home" | "study";
+type StudyMode = "learn" | "review";
 
 const STORAGE_KEY = "slovik-decks-v1";
 const SAMPLE_TEXT = [
@@ -91,12 +92,15 @@ export default function StudyApp() {
   const [title, setTitle] = useState("Английский для путешествий");
   const [rawText, setRawText] = useState(SAMPLE_TEXT);
   const [view, setView] = useState<View>("home");
+  const [studyMode, setStudyMode] = useState<StudyMode>("learn");
   const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
   const [studyCards, setStudyCards] = useState<WordCard[]>([]);
   const [cardIndex, setCardIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [reverse, setReverse] = useState(false);
   const [answers, setAnswers] = useState<boolean[]>([]);
+  const [reviewMastered, setReviewMastered] = useState<string[]>([]);
+  const [previewing, setPreviewing] = useState(false);
   const [finished, setFinished] = useState(false);
   const [notice, setNotice] = useState("");
   const titleRef = useRef<HTMLInputElement>(null);
@@ -143,37 +147,102 @@ export default function StudyApp() {
   }, [activeDeckId]);
 
   const markAnswer = useCallback((known: boolean) => {
-    if (finished || !currentCard || !flipped) return;
+    if (finished || !currentCard || !flipped || previewing) return;
     const nextAnswers = [...answers, known];
     setAnswers(nextAnswers);
+
+    if (studyMode === "review" && activeDeck) {
+      const nextQueue = [...studyCards];
+
+      if (known) {
+        const nextMastered = reviewMastered.includes(currentCard.id)
+          ? reviewMastered
+          : [...reviewMastered, currentCard.id];
+        const queueWithoutOldRepeats = nextQueue.filter((card, index) => (
+          index <= cardIndex || card.id !== currentCard.id
+        ));
+
+        setReviewMastered(nextMastered);
+        setStudyCards(queueWithoutOldRepeats);
+
+        if (nextMastered.length >= activeDeck.cards.length) {
+          finishSession(nextAnswers);
+          return;
+        }
+      } else {
+        const earliestRepeat = Math.min(cardIndex + 2, nextQueue.length);
+        const latestRepeat = Math.min(cardIndex + 4, nextQueue.length);
+        const repeatAt = earliestRepeat + Math.floor(Math.random() * (latestRepeat - earliestRepeat + 1));
+        nextQueue.splice(repeatAt, 0, currentCard);
+        setStudyCards(nextQueue);
+      }
+
+      setCardIndex((index) => index + 1);
+      setFlipped(false);
+      return;
+    }
+
     if (cardIndex >= studyCards.length - 1) {
       finishSession(nextAnswers);
       return;
     }
     setCardIndex((index) => index + 1);
     setFlipped(false);
-  }, [answers, cardIndex, currentCard, finishSession, finished, flipped, studyCards.length]);
+  }, [activeDeck, answers, cardIndex, currentCard, finishSession, finished, flipped, previewing, reviewMastered, studyCards, studyMode]);
+
+  useEffect(() => {
+    if (view !== "study" || finished || studyMode !== "review" || !currentCard) {
+      setPreviewing(false);
+      return;
+    }
+
+    setPreviewing(true);
+    setFlipped(true);
+    const timeout = window.setTimeout(() => {
+      setPreviewing(false);
+      setFlipped(false);
+    }, 1000);
+
+    return () => window.clearTimeout(timeout);
+  }, [cardIndex, currentCard, finished, studyMode, view]);
 
   useEffect(() => {
     if (view !== "study" || finished) return;
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.code === "Space") {
+      if (event.code === "Space" && !previewing) {
         event.preventDefault();
         setFlipped((value) => !value);
       }
-      if (event.key === "ArrowLeft" && flipped) markAnswer(false);
-      if (event.key === "ArrowRight" && flipped) markAnswer(true);
+      if (event.key === "ArrowLeft" && flipped && !previewing) markAnswer(false);
+      if (event.key === "ArrowRight" && flipped && !previewing) markAnswer(true);
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [finished, flipped, markAnswer, view]);
+  }, [finished, flipped, markAnswer, previewing, view]);
 
   function startStudy(deck: Deck, shouldShuffle = false) {
+    setStudyMode("learn");
     setActiveDeckId(deck.id);
     setStudyCards(shouldShuffle ? shuffle(deck.cards) : [...deck.cards]);
     setCardIndex(0);
     setFlipped(false);
     setAnswers([]);
+    setReviewMastered([]);
+    setPreviewing(false);
+    setFinished(false);
+    setView("study");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function startReview(deck: Deck) {
+    setStudyMode("review");
+    setActiveDeckId(deck.id);
+    setStudyCards(shuffle(deck.cards));
+    setCardIndex(0);
+    setFlipped(true);
+    setAnswers([]);
+    setReviewMastered([]);
+    setPreviewing(true);
     setFinished(false);
     setView("study");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -220,6 +289,8 @@ export default function StudyApp() {
     const score = Math.round((knownCount / Math.max(answers.length, 1)) * 100);
     const cardFront = reverse ? currentCard.back : currentCard.front;
     const cardBack = reverse ? currentCard.front : currentCard.back;
+    const progressCurrent = studyMode === "review" ? reviewMastered.length : cardIndex + 1;
+    const progressTotal = studyMode === "review" ? activeDeck.cards.length : studyCards.length;
 
     return (
       <main className="study-shell">
@@ -230,10 +301,10 @@ export default function StudyApp() {
             <span>словик</span>
           </a>
           <div className="study-title-block">
-            <span>Тренировка</span>
+            <span>{studyMode === "review" ? "Умное повторение" : "Тренировка"}</span>
             <strong>{activeDeck.title}</strong>
           </div>
-          <button className="direction-button" type="button" onClick={() => { setReverse((value) => !value); setFlipped(false); }} aria-label="Поменять стороны карточек">
+          <button className="direction-button" type="button" onClick={() => { setReverse((value) => !value); setFlipped(false); }} aria-label="Поменять стороны карточек" disabled={previewing}>
             {reverse ? "RU → EN" : "EN → RU"} <span aria-hidden="true">⇄</span>
           </button>
         </header>
@@ -242,16 +313,20 @@ export default function StudyApp() {
           {!finished ? (
             <>
               <div className="study-meta">
-                <span><strong>{cardIndex + 1}</strong> / {studyCards.length}</span>
-                <div className="progress-track" aria-label={`Прогресс: ${cardIndex + 1} из ${studyCards.length}`}>
-                  <span style={{ width: `${((cardIndex + 1) / studyCards.length) * 100}%` }} />
+                <span><strong>{progressCurrent}</strong> / {progressTotal}</span>
+                <div className="progress-track" aria-label={`Прогресс: ${progressCurrent} из ${progressTotal}`}>
+                  <span style={{ width: `${(progressCurrent / Math.max(progressTotal, 1)) * 100}%` }} />
                 </div>
-                <button type="button" onClick={() => { setStudyCards(shuffle(studyCards)); setCardIndex(0); setAnswers([]); setFlipped(false); }}>
-                  Перемешать
-                </button>
+                {studyMode === "review" ? (
+                  <span className="review-loop-note">↻ сложные вернутся</span>
+                ) : (
+                  <button type="button" onClick={() => { setStudyCards(shuffle(studyCards)); setCardIndex(0); setAnswers([]); setFlipped(false); }}>
+                    Перемешать
+                  </button>
+                )}
               </div>
 
-              <button className={`flashcard ${flipped ? "is-flipped" : ""}`} type="button" onClick={() => setFlipped((value) => !value)} aria-label={flipped ? `Перевод: ${cardBack}` : `Слово: ${cardFront}. Нажмите, чтобы увидеть перевод`}>
+              <button className={`flashcard ${flipped ? "is-flipped" : ""} ${previewing ? "is-previewing" : ""}`} type="button" onClick={() => { if (!previewing) setFlipped((value) => !value); }} aria-label={previewing ? `Подсказка на одну секунду: ${cardBack}` : flipped ? `Перевод: ${cardBack}` : `Слово: ${cardFront}. Нажмите, чтобы увидеть перевод`}>
                 <span className="flashcard-inner">
                   <span className="flashcard-face flashcard-front">
                     <small>{reverse ? "ПЕРЕВОД" : "СЛОВО"}</small>
@@ -260,19 +335,19 @@ export default function StudyApp() {
                     <span className="card-number">{String(cardIndex + 1).padStart(2, "0")}</span>
                   </span>
                   <span className="flashcard-face flashcard-back">
-                    <small>{reverse ? "СЛОВО" : "ПЕРЕВОД"}</small>
+                    <small>{previewing ? "ПОДСКАЗКА · 1 СЕК" : reverse ? "СЛОВО" : "ПЕРЕВОД"}</small>
                     <strong>{cardBack}</strong>
-                    <em>Оцени, получилось ли вспомнить</em>
-                    <span className="card-number">✓</span>
+                    <em>{previewing ? "Смотри внимательно — сейчас исчезнет" : "Оцени, получилось ли вспомнить"}</em>
+                    <span className="card-number">{previewing ? "1s" : "✓"}</span>
                   </span>
                 </span>
               </button>
 
-              <div className={`answer-actions ${flipped ? "is-visible" : ""}`}>
-                <button className="answer-button forgot" type="button" onClick={() => markAnswer(false)} disabled={!flipped}>
+              <div className={`answer-actions ${flipped && !previewing ? "is-visible" : ""}`}>
+                <button className="answer-button forgot" type="button" onClick={() => markAnswer(false)} disabled={!flipped || previewing}>
                   <span>←</span><strong>Пока не помню</strong><small>стрелка влево</small>
                 </button>
-                <button className="answer-button knew" type="button" onClick={() => markAnswer(true)} disabled={!flipped}>
+                <button className="answer-button knew" type="button" onClick={() => markAnswer(true)} disabled={!flipped || previewing}>
                   <strong>Вспомнил!</strong><small>стрелка вправо</small><span>→</span>
                 </button>
               </div>
@@ -281,14 +356,19 @@ export default function StudyApp() {
           ) : (
             <div className="result-card">
               <span className="result-burst" aria-hidden="true">✦</span>
-              <span className="eyebrow">ПОДХОД ЗАВЕРШЁН</span>
-              <h1>{score >= 80 ? "Отличная работа!" : score >= 50 ? "Хороший темп!" : "Первый шаг сделан!"}</h1>
-              <p>Ты вспомнил <strong>{knownCount}</strong> из <strong>{studyCards.length}</strong> карточек.</p>
+              <span className="eyebrow">{studyMode === "review" ? "ПОВТОРЕНИЕ ЗАВЕРШЕНО" : "ПОДХОД ЗАВЕРШЁН"}</span>
+              <h1>{studyMode === "review" ? "Все карточки закреплены!" : score >= 80 ? "Отличная работа!" : score >= 50 ? "Хороший темп!" : "Первый шаг сделан!"}</h1>
+              <p>{studyMode === "review" ? (
+                <>Ты прошёл все <strong>{activeDeck.cards.length}</strong> карточек. Сложные слова возвращались в очередь.</>
+              ) : (
+                <>Ты вспомнил <strong>{knownCount}</strong> из <strong>{studyCards.length}</strong> карточек.</>
+              )}</p>
               <div className="score-ring" style={{ "--score": `${score * 3.6}deg` } as React.CSSProperties}>
                 <span>{score}%</span>
               </div>
+              {studyMode === "review" && <small className="score-caption">точность ответов</small>}
               <div className="result-actions">
-                <button className="secondary-button" type="button" onClick={() => startStudy(activeDeck, true)}>Ещё раз</button>
+                <button className="secondary-button" type="button" onClick={() => startReview(activeDeck)}>{studyMode === "review" ? "Повторить ещё раз" : "Повторить сложные"}</button>
                 <button className="primary-button compact" type="button" onClick={() => setView("home")}>К моим наборам →</button>
               </div>
             </div>
@@ -374,9 +454,14 @@ export default function StudyApp() {
                   <span><i style={{ width: `${deck.lastScore}%` }} /></span>
                   <small>{deck.sessions ? `Последний результат ${deck.lastScore}%` : "Ещё не изучали"}</small>
                 </div>
-                <button className="study-button" type="button" onClick={() => startStudy(deck)}>
-                  Учить <span aria-hidden="true">→</span>
-                </button>
+                <div className="deck-actions">
+                  <button className="review-button" type="button" onClick={() => startReview(deck)}>
+                    <span aria-hidden="true">↻</span> Повторить
+                  </button>
+                  <button className="study-button" type="button" onClick={() => startStudy(deck)}>
+                    Учить <span aria-hidden="true">→</span>
+                  </button>
+                </div>
               </article>
             ))}
           </div>
@@ -398,7 +483,7 @@ export default function StudyApp() {
         <ol className="steps-list">
           <li><span>01</span><div><strong>Вставь</strong><p>Скопируй сразу весь список в привычном формате.</p></div></li>
           <li><span>02</span><div><strong>Переверни</strong><p>Вспомни перевод и открой обратную сторону.</p></div></li>
-          <li><span>03</span><div><strong>Закрепи</strong><p>Отметь ответ и повтори слова, которые пока сложны.</p></div></li>
+          <li><span>03</span><div><strong>Закрепи</strong><p>Сложные слова сами вернутся в случайном порядке.</p></div></li>
         </ol>
       </section>
 
