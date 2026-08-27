@@ -42,3 +42,5 @@ npm run build
 ## Технологии
 
 React 19, TypeScript, vinext, Vite и Cloudflare Workers.
+
+<img width="1726" height="1000" alt="Снимок экрана 2026-08-27 в 18 55 54" src="https://github.com/user-attachments/assets/c8942fa5-5fce-4511-9174-fcba17b771a5" />
