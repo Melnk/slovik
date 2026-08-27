@@ -20,7 +20,20 @@ type Deck = {
 type View = "home" | "study";
 type StudyMode = "learn" | "review";
 
+type SessionSnapshot = {
+  deckId: string;
+  mode: StudyMode;
+  queue: string[];
+  cardIndex: number;
+  flipped: boolean;
+  reverse: boolean;
+  answers: boolean[];
+  reviewMastered: string[];
+  savedAt: number;
+};
+
 const STORAGE_KEY = "slovik-decks-v1";
+const SESSION_KEY = "slovik-active-session-v1";
 const SAMPLE_TEXT = [
   "journey - путешествие",
   "cozy - уютный",
@@ -86,6 +99,22 @@ function shuffle<T>(items: T[]) {
   return result;
 }
 
+function getSessionStats(snapshot: SessionSnapshot, deck: Deck) {
+  const completed = snapshot.mode === "review"
+    ? snapshot.reviewMastered.length
+    : Math.min(snapshot.cardIndex, deck.cards.length);
+  const correct = snapshot.answers.filter(Boolean).length;
+
+  return {
+    completed,
+    total: deck.cards.length,
+    progress: Math.round((completed / Math.max(deck.cards.length, 1)) * 100),
+    accuracy: snapshot.answers.length
+      ? Math.round((correct / snapshot.answers.length) * 100)
+      : 0,
+  };
+}
+
 export default function StudyApp() {
   const [decks, setDecks] = useState<Deck[]>(DEMO_DECKS);
   const [loaded, setLoaded] = useState(false);
@@ -102,6 +131,7 @@ export default function StudyApp() {
   const [reviewMastered, setReviewMastered] = useState<string[]>([]);
   const [previewing, setPreviewing] = useState(false);
   const [finished, setFinished] = useState(false);
+  const [savedSession, setSavedSession] = useState<SessionSnapshot | null>(null);
   const [notice, setNotice] = useState("");
   const titleRef = useRef<HTMLInputElement>(null);
 
@@ -109,13 +139,38 @@ export default function StudyApp() {
   const activeDeck = decks.find((deck) => deck.id === activeDeckId) ?? null;
   const currentCard = studyCards[cardIndex];
   const knownCount = answers.filter(Boolean).length;
+  const savedDeck = savedSession
+    ? decks.find((deck) => deck.id === savedSession.deckId) ?? null
+    : null;
+  const savedStats = savedSession && savedDeck
+    ? getSessionStats(savedSession, savedDeck)
+    : null;
 
   useEffect(() => {
+    let availableDecks = DEMO_DECKS;
     try {
       const saved = window.localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const storedDecks = JSON.parse(saved) as Deck[];
-        if (Array.isArray(storedDecks)) setDecks(storedDecks);
+        if (Array.isArray(storedDecks)) {
+          availableDecks = storedDecks;
+          setDecks(storedDecks);
+        }
+      }
+
+      const savedProgress = window.localStorage.getItem(SESSION_KEY);
+      if (savedProgress) {
+        const snapshot = JSON.parse(savedProgress) as SessionSnapshot;
+        if (
+          snapshot
+          && Array.isArray(snapshot.queue)
+          && Array.isArray(snapshot.answers)
+          && availableDecks.some((deck) => deck.id === snapshot.deckId)
+        ) {
+          setSavedSession(snapshot);
+        } else {
+          window.localStorage.removeItem(SESSION_KEY);
+        }
       }
     } catch {
       // Keep the example deck if browser storage is unavailable or damaged.
@@ -130,10 +185,34 @@ export default function StudyApp() {
   }, [decks, loaded]);
 
   useEffect(() => {
+    if (!loaded || view !== "study" || !activeDeckId || !currentCard || finished) return;
+
+    const snapshot: SessionSnapshot = {
+      deckId: activeDeckId,
+      mode: studyMode,
+      queue: studyCards.map((card) => card.id),
+      cardIndex,
+      flipped,
+      reverse,
+      answers,
+      reviewMastered,
+      savedAt: Date.now(),
+    };
+
+    window.localStorage.setItem(SESSION_KEY, JSON.stringify(snapshot));
+    setSavedSession(snapshot);
+  }, [activeDeckId, answers, cardIndex, currentCard, finished, flipped, loaded, reverse, reviewMastered, studyCards, studyMode, view]);
+
+  useEffect(() => {
     if (!notice) return;
     const timeout = window.setTimeout(() => setNotice(""), 3200);
     return () => window.clearTimeout(timeout);
   }, [notice]);
+
+  const clearSavedSession = useCallback(() => {
+    window.localStorage.removeItem(SESSION_KEY);
+    setSavedSession(null);
+  }, []);
 
   const finishSession = useCallback((finalAnswers: boolean[]) => {
     if (!activeDeckId) return;
@@ -143,8 +222,9 @@ export default function StudyApp() {
         ? { ...deck, lastScore: score, sessions: deck.sessions + 1 }
         : deck
     )));
+    clearSavedSession();
     setFinished(true);
-  }, [activeDeckId]);
+  }, [activeDeckId, clearSavedSession]);
 
   const markAnswer = useCallback((known: boolean) => {
     if (finished || !currentCard || !flipped || previewing) return;
@@ -221,6 +301,7 @@ export default function StudyApp() {
   }, [finished, flipped, markAnswer, previewing, view]);
 
   function startStudy(deck: Deck, shouldShuffle = false) {
+    clearSavedSession();
     setStudyMode("learn");
     setActiveDeckId(deck.id);
     setStudyCards(shouldShuffle ? shuffle(deck.cards) : [...deck.cards]);
@@ -235,6 +316,7 @@ export default function StudyApp() {
   }
 
   function startReview(deck: Deck) {
+    clearSavedSession();
     setStudyMode("review");
     setActiveDeckId(deck.id);
     setStudyCards(shuffle(deck.cards));
@@ -243,6 +325,39 @@ export default function StudyApp() {
     setAnswers([]);
     setReviewMastered([]);
     setPreviewing(true);
+    setFinished(false);
+    setView("study");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function resumeSession(snapshot: SessionSnapshot) {
+    const deck = decks.find((item) => item.id === snapshot.deckId);
+    if (!deck) {
+      clearSavedSession();
+      setNotice("Не удалось найти набор для продолжения");
+      return;
+    }
+
+    const cardsById = new Map(deck.cards.map((card) => [card.id, card]));
+    const restoredQueue = snapshot.queue
+      .map((cardId) => cardsById.get(cardId))
+      .filter((card): card is WordCard => Boolean(card));
+
+    if (!restoredQueue.length || snapshot.cardIndex >= restoredQueue.length) {
+      clearSavedSession();
+      setNotice("Сохранённый подход уже завершён");
+      return;
+    }
+
+    setStudyMode(snapshot.mode);
+    setActiveDeckId(snapshot.deckId);
+    setStudyCards(restoredQueue);
+    setCardIndex(snapshot.cardIndex);
+    setFlipped(snapshot.flipped);
+    setReverse(snapshot.reverse);
+    setAnswers(snapshot.answers);
+    setReviewMastered(snapshot.reviewMastered);
+    setPreviewing(false);
     setFinished(false);
     setView("study");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -273,6 +388,7 @@ export default function StudyApp() {
   function deleteDeck(deckId: string) {
     const deck = decks.find((item) => item.id === deckId);
     if (!deck || !window.confirm(`Удалить набор «${deck.title}»?`)) return;
+    if (savedSession?.deckId === deckId) clearSavedSession();
     setDecks((current) => current.filter((item) => item.id !== deckId));
     setNotice("Набор удалён");
   }
@@ -312,6 +428,7 @@ export default function StudyApp() {
         <section className="study-stage" aria-live="polite">
           {!finished ? (
             <>
+              <div className="autosave-status"><i /> Прогресс сохраняется автоматически</div>
               <div className="study-meta">
                 <span><strong>{progressCurrent}</strong> / {progressTotal}</span>
                 <div className="progress-track" aria-label={`Прогресс: ${progressCurrent} из ${progressTotal}`}>
@@ -439,6 +556,21 @@ export default function StudyApp() {
           </div>
           <button className="secondary-button" type="button" onClick={focusImporter}>＋ Создать новый</button>
         </div>
+
+        {savedSession && savedDeck && savedStats && (
+          <div className="resume-banner">
+            <span className="resume-icon" aria-hidden="true">↗</span>
+            <div className="resume-copy">
+              <small>АВТОСОХРАНЕНИЕ</small>
+              <strong>Незаконченный подход сохранён</strong>
+              <p>{savedDeck.title} · {savedStats.completed} из {savedStats.total} · точность {savedStats.accuracy}%</p>
+            </div>
+            <div className="resume-progress" aria-label={`Сохранённый прогресс: ${savedStats.progress}%`}>
+              <span style={{ width: `${savedStats.progress}%` }} />
+            </div>
+            <button type="button" onClick={() => resumeSession(savedSession)}>Продолжить <span aria-hidden="true">→</span></button>
+          </div>
+        )}
 
         {decks.length ? (
           <div className="deck-grid">

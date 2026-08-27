@@ -128,6 +128,18 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .secondary-button { min-height: 44px; padding: 0 18px; border: 1px solid #d8dbd5; border-radius: 12px; background: var(--paper); color: var(--ink); font-size: 12px; font-weight: 800; cursor: pointer; transition: transform .2s, border-color .2s; }
 .secondary-button:hover { transform: translateY(-1px); border-color: #b9c2bc; }
 
+.resume-banner { display: grid; grid-template-columns: 48px minmax(0, 1fr) minmax(100px, 170px) auto; align-items: center; gap: 18px; margin: 0 0 24px; padding: 18px 20px; border: 1px solid #cfded2; border-radius: 18px; background: linear-gradient(100deg, #edf5ee, #fffefa); box-shadow: 0 10px 28px rgba(63, 90, 70, .07); }
+.resume-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; background: var(--green-deep); color: white; font-size: 19px; }
+.resume-copy { min-width: 0; }
+.resume-copy small, .resume-copy strong, .resume-copy p { display: block; }
+.resume-copy small { margin-bottom: 4px; color: #6d9778; font-size: 8px; font-weight: 900; letter-spacing: 1.4px; }
+.resume-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: Georgia, 'Times New Roman', serif; font-size: 17px; font-weight: 500; }
+.resume-copy p { margin: 4px 0 0; overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.resume-progress { height: 5px; overflow: hidden; border-radius: 99px; background: #dbe5dd; }
+.resume-progress span { display: block; height: 100%; border-radius: inherit; background: var(--green-deep); transition: width .25s ease; }
+.resume-banner > button { display: flex; align-items: center; gap: 10px; height: 42px; padding: 0 16px; border: 0; border-radius: 11px; background: var(--ink); color: white; font-size: 11px; font-weight: 800; cursor: pointer; }
+.resume-banner > button span { font-size: 17px; font-weight: 400; }
+
 .deck-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 .deck-card { position: relative; min-height: 305px; padding: 25px; overflow: hidden; border: 1px solid rgba(36, 49, 44, .1); border-radius: 21px; background: var(--paper); box-shadow: 0 10px 35px rgba(63, 73, 65, .06); }
 .deck-card::after { content: ""; position: absolute; width: 150px; height: 150px; right: -70px; top: -70px; border-radius: 50%; background: var(--deck-glow); opacity: .55; }
@@ -190,6 +202,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .direction-button:disabled { opacity: .5; cursor: wait; }
 
 .study-stage { width: min(760px, calc(100% - 32px)); margin: 0 auto; padding: 38px 0 70px; }
+.autosave-status { display: flex; align-items: center; justify-content: flex-end; gap: 6px; margin: 0 0 11px; color: #7d8c84; font-size: 9px; }
+.autosave-status i { width: 6px; height: 6px; border-radius: 50%; background: #6da67c; box-shadow: 0 0 0 4px rgba(109, 166, 124, .11); }
 .study-meta { display: grid; grid-template-columns: 58px 1fr 86px; align-items: center; gap: 16px; margin-bottom: 25px; color: var(--muted); font-size: 11px; }
 .study-meta strong { color: var(--ink); font-size: 15px; }
 .study-meta > button { padding: 0; border: 0; background: none; color: var(--green-deep); font-size: 10px; font-weight: 800; cursor: pointer; }
@@ -266,6 +280,9 @@ kbd { display: inline-block; min-width: 22px; margin: 0 3px; padding: 3px 6px; b
   .section-heading h2 { font-size: 34px; }
   .section-heading .secondary-button { width: 43px; min-height: 43px; padding: 0; overflow: hidden; font-size: 0; }
   .section-heading .secondary-button::first-letter { font-size: 16px; }
+  .resume-banner { grid-template-columns: 44px 1fr; gap: 12px; padding: 16px; }
+  .resume-progress { grid-column: 1 / -1; }
+  .resume-banner > button { grid-column: 1 / -1; justify-content: center; }
   .deck-grid { grid-template-columns: 1fr; }
   .how-section { width: 100%; padding: 58px 24px; border-radius: 0; }
   .how-copy h2 { font-size: 34px; }
