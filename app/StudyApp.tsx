@@ -129,7 +129,6 @@ export default function StudyApp() {
   const [reverse, setReverse] = useState(false);
   const [answers, setAnswers] = useState<boolean[]>([]);
   const [reviewMastered, setReviewMastered] = useState<string[]>([]);
-  const [previewing, setPreviewing] = useState(false);
   const [finished, setFinished] = useState(false);
   const [savedSession, setSavedSession] = useState<SessionSnapshot | null>(null);
   const [notice, setNotice] = useState("");
@@ -238,7 +237,7 @@ export default function StudyApp() {
   }, [activeDeckId, clearSavedSession]);
 
   const markAnswer = useCallback((known: boolean) => {
-    if (finished || !currentCard || !flipped || previewing) return;
+    if (finished || !currentCard || !flipped) return;
     const nextAnswers = [...answers, known];
     setAnswers(nextAnswers);
 
@@ -279,39 +278,21 @@ export default function StudyApp() {
     }
     setCardIndex((index) => index + 1);
     setFlipped(false);
-  }, [activeDeck, answers, cardIndex, currentCard, finishSession, finished, flipped, previewing, reviewMastered, studyCards, studyMode]);
-
-  useEffect(() => {
-    if (view !== "study" || finished || studyMode !== "review" || !currentCard) return;
-
-    const startTimeout = window.setTimeout(() => {
-      setPreviewing(true);
-      setFlipped(true);
-    }, 0);
-    const endTimeout = window.setTimeout(() => {
-      setPreviewing(false);
-      setFlipped(false);
-    }, 1000);
-
-    return () => {
-      window.clearTimeout(startTimeout);
-      window.clearTimeout(endTimeout);
-    };
-  }, [cardIndex, currentCard, finished, studyMode, view]);
+  }, [activeDeck, answers, cardIndex, currentCard, finishSession, finished, flipped, reviewMastered, studyCards, studyMode]);
 
   useEffect(() => {
     if (view !== "study" || finished) return;
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.code === "Space" && !previewing) {
+      if (event.code === "Space") {
         event.preventDefault();
         setFlipped((value) => !value);
       }
-      if (event.key === "ArrowLeft" && flipped && !previewing) markAnswer(false);
-      if (event.key === "ArrowRight" && flipped && !previewing) markAnswer(true);
+      if (event.key === "ArrowLeft" && flipped) markAnswer(false);
+      if (event.key === "ArrowRight" && flipped) markAnswer(true);
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [finished, flipped, markAnswer, previewing, view]);
+  }, [finished, flipped, markAnswer, view]);
 
   function startStudy(deck: Deck, shouldShuffle = false) {
     clearSavedSession();
@@ -322,7 +303,6 @@ export default function StudyApp() {
     setFlipped(false);
     setAnswers([]);
     setReviewMastered([]);
-    setPreviewing(false);
     setFinished(false);
     setView("study");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -334,10 +314,9 @@ export default function StudyApp() {
     setActiveDeckId(deck.id);
     setStudyCards(shuffle(deck.cards));
     setCardIndex(0);
-    setFlipped(true);
+    setFlipped(false);
     setAnswers([]);
     setReviewMastered([]);
-    setPreviewing(true);
     setFinished(false);
     setView("study");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -370,7 +349,6 @@ export default function StudyApp() {
     setReverse(snapshot.reverse);
     setAnswers(snapshot.answers);
     setReviewMastered(snapshot.reviewMastered);
-    setPreviewing(false);
     setFinished(false);
     setView("study");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -446,7 +424,7 @@ export default function StudyApp() {
             <span>{studyMode === "review" ? "Умное повторение" : "Тренировка"}</span>
             <strong>{activeDeck.title}</strong>
           </div>
-          <button className="direction-button" type="button" onClick={() => { setReverse((value) => !value); setFlipped(false); }} aria-label="Поменять стороны карточек" disabled={previewing}>
+          <button className="direction-button" type="button" onClick={() => { setReverse((value) => !value); setFlipped(false); }} aria-label="Поменять стороны карточек">
             {reverse ? "RU → EN" : "EN → RU"} <span aria-hidden="true">⇄</span>
           </button>
         </header>
@@ -469,7 +447,7 @@ export default function StudyApp() {
                 )}
               </div>
 
-              <button className={`flashcard ${flipped ? "is-flipped" : ""} ${previewing ? "is-previewing" : ""}`} type="button" onClick={() => { if (!previewing) setFlipped((value) => !value); }} aria-label={previewing ? `Подсказка на одну секунду: ${cardBack}` : flipped ? `Перевод: ${cardBack}` : `Слово: ${cardFront}. Нажмите, чтобы увидеть перевод`}>
+              <button className={`flashcard ${flipped ? "is-flipped" : ""}`} type="button" onClick={() => setFlipped((value) => !value)} aria-label={flipped ? `Перевод: ${cardBack}` : `Слово: ${cardFront}. Нажмите, чтобы увидеть перевод`}>
                 <span className="flashcard-inner">
                   <span className="flashcard-face flashcard-front">
                     <small>{reverse ? "ПЕРЕВОД" : "СЛОВО"}</small>
@@ -478,10 +456,10 @@ export default function StudyApp() {
                     <span className="card-number">{String(cardIndex + 1).padStart(2, "0")}</span>
                   </span>
                   <span className="flashcard-face flashcard-back">
-                    <small>{previewing ? "ПОДСКАЗКА · 1 СЕК" : reverse ? "СЛОВО" : "ПЕРЕВОД"}</small>
+                    <small>{reverse ? "СЛОВО" : "ПЕРЕВОД"}</small>
                     <strong>{cardBack}</strong>
-                    <em>{previewing ? "Смотри внимательно — сейчас исчезнет" : "Оцени, получилось ли вспомнить"}</em>
-                    <span className="card-number">{previewing ? "1s" : "✓"}</span>
+                    <em>Оцени, получилось ли вспомнить</em>
+                    <span className="card-number">✓</span>
                   </span>
                 </span>
               </button>
@@ -490,18 +468,17 @@ export default function StudyApp() {
                 className="pronunciation-button"
                 type="button"
                 onClick={() => speak(flipped ? cardBack : cardFront)}
-                disabled={previewing}
                 aria-label={`Озвучить: ${flipped ? cardBack : cardFront}`}
               >
                 <span aria-hidden="true">◖))</span>
                 Озвучить эту сторону
               </button>
 
-              <div className={`answer-actions ${flipped && !previewing ? "is-visible" : ""}`}>
-                <button className="answer-button forgot" type="button" onClick={() => markAnswer(false)} disabled={!flipped || previewing}>
+              <div className={`answer-actions ${flipped ? "is-visible" : ""}`}>
+                <button className="answer-button forgot" type="button" onClick={() => markAnswer(false)} disabled={!flipped}>
                   <span>←</span><strong>Пока не помню</strong><small>стрелка влево</small>
                 </button>
-                <button className="answer-button knew" type="button" onClick={() => markAnswer(true)} disabled={!flipped || previewing}>
+                <button className="answer-button knew" type="button" onClick={() => markAnswer(true)} disabled={!flipped}>
                   <strong>Вспомнил!</strong><small>стрелка вправо</small><span>→</span>
                 </button>
               </div>
