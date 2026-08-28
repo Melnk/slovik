@@ -15,6 +15,7 @@ type Deck = {
   createdAt: number;
   lastScore: number;
   sessions: number;
+  mistakes?: Record<string, number>;
 };
 
 type View = "home" | "study";
@@ -34,6 +35,8 @@ type SessionSnapshot = {
 
 const STORAGE_KEY = "slovik-decks-v1";
 const SESSION_KEY = "slovik-active-session-v1";
+const MAX_REVIEW_CARDS = 12;
+const FRESH_REVIEW_CARDS = 5;
 const SAMPLE_TEXT = [
   "journey - путешествие",
   "cozy - уютный",
@@ -99,16 +102,32 @@ function shuffle<T>(items: T[]) {
   return result;
 }
 
+function selectReviewCards(deck: Deck) {
+  const forgottenCards = deck.cards.filter((card) => (deck.mistakes?.[card.id] ?? 0) > 0);
+  if (forgottenCards.length) {
+    return shuffle(forgottenCards).slice(0, MAX_REVIEW_CARDS);
+  }
+
+  return shuffle(deck.cards).slice(0, Math.min(FRESH_REVIEW_CARDS, deck.cards.length));
+}
+
+function countUniqueCards(cards: WordCard[]) {
+  return new Set(cards.map((card) => card.id)).size;
+}
+
 function getSessionStats(snapshot: SessionSnapshot, deck: Deck) {
+  const total = snapshot.mode === "review"
+    ? new Set(snapshot.queue).size
+    : deck.cards.length;
   const completed = snapshot.mode === "review"
-    ? snapshot.reviewMastered.length
+    ? Math.min(snapshot.reviewMastered.length, total)
     : Math.min(snapshot.cardIndex, deck.cards.length);
   const correct = snapshot.answers.filter(Boolean).length;
 
   return {
     completed,
-    total: deck.cards.length,
-    progress: Math.round((completed / Math.max(deck.cards.length, 1)) * 100),
+    total,
+    progress: Math.round((completed / Math.max(total, 1)) * 100),
     accuracy: snapshot.answers.length
       ? Math.round((correct / snapshot.answers.length) * 100)
       : 0,
@@ -241,6 +260,18 @@ export default function StudyApp() {
     const nextAnswers = [...answers, known];
     setAnswers(nextAnswers);
 
+    setDecks((current) => current.map((deck) => {
+      if (deck.id !== activeDeckId) return deck;
+      const currentMistakes = deck.mistakes?.[currentCard.id] ?? 0;
+      if (known && currentMistakes === 0) return deck;
+
+      const nextMistakes = { ...deck.mistakes };
+      const nextScore = known ? currentMistakes - 1 : currentMistakes + 1;
+      if (nextScore > 0) nextMistakes[currentCard.id] = nextScore;
+      else delete nextMistakes[currentCard.id];
+      return { ...deck, mistakes: nextMistakes };
+    }));
+
     if (studyMode === "review" && activeDeck) {
       const nextQueue = [...studyCards];
 
@@ -255,7 +286,7 @@ export default function StudyApp() {
         setReviewMastered(nextMastered);
         setStudyCards(queueWithoutOldRepeats);
 
-        if (nextMastered.length >= activeDeck.cards.length) {
+        if (nextMastered.length >= countUniqueCards(studyCards)) {
           finishSession(nextAnswers);
           return;
         }
@@ -278,7 +309,7 @@ export default function StudyApp() {
     }
     setCardIndex((index) => index + 1);
     setFlipped(false);
-  }, [activeDeck, answers, cardIndex, currentCard, finishSession, finished, flipped, reviewMastered, studyCards, studyMode]);
+  }, [activeDeck, activeDeckId, answers, cardIndex, currentCard, finishSession, finished, flipped, reviewMastered, studyCards, studyMode]);
 
   useEffect(() => {
     if (view !== "study" || finished) return;
@@ -294,11 +325,11 @@ export default function StudyApp() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [finished, flipped, markAnswer, view]);
 
-  function startStudy(deck: Deck, shouldShuffle = false) {
+  function startStudy(deck: Deck) {
     clearSavedSession();
     setStudyMode("learn");
     setActiveDeckId(deck.id);
-    setStudyCards(shouldShuffle ? shuffle(deck.cards) : [...deck.cards]);
+    setStudyCards(shuffle(deck.cards));
     setCardIndex(0);
     setFlipped(false);
     setAnswers([]);
@@ -312,7 +343,7 @@ export default function StudyApp() {
     clearSavedSession();
     setStudyMode("review");
     setActiveDeckId(deck.id);
-    setStudyCards(shuffle(deck.cards));
+    setStudyCards(selectReviewCards(deck));
     setCardIndex(0);
     setFlipped(false);
     setAnswers([]);
@@ -409,8 +440,9 @@ export default function StudyApp() {
     const score = Math.round((knownCount / Math.max(answers.length, 1)) * 100);
     const cardFront = reverse ? currentCard.back : currentCard.front;
     const cardBack = reverse ? currentCard.front : currentCard.back;
+    const reviewCardCount = countUniqueCards(studyCards);
     const progressCurrent = studyMode === "review" ? reviewMastered.length : cardIndex + 1;
-    const progressTotal = studyMode === "review" ? activeDeck.cards.length : studyCards.length;
+    const progressTotal = studyMode === "review" ? reviewCardCount : studyCards.length;
 
     return (
       <main className="study-shell">
@@ -488,9 +520,9 @@ export default function StudyApp() {
             <div className="result-card">
               <span className="result-burst" aria-hidden="true">✦</span>
               <span className="eyebrow">{studyMode === "review" ? "ПОВТОРЕНИЕ ЗАВЕРШЕНО" : "ПОДХОД ЗАВЕРШЁН"}</span>
-              <h1>{studyMode === "review" ? "Все карточки закреплены!" : score >= 80 ? "Отличная работа!" : score >= 50 ? "Хороший темп!" : "Первый шаг сделан!"}</h1>
+              <h1>{studyMode === "review" ? "Подборка закреплена!" : score >= 80 ? "Отличная работа!" : score >= 50 ? "Хороший темп!" : "Первый шаг сделан!"}</h1>
               <p>{studyMode === "review" ? (
-                <>Ты прошёл все <strong>{activeDeck.cards.length}</strong> карточек. Сложные слова возвращались в очередь.</>
+                <>Ты закрепил <strong>{reviewCardCount}</strong> карточек. В приоритете были слова, которые забывались.</>
               ) : (
                 <>Ты вспомнил <strong>{knownCount}</strong> из <strong>{studyCards.length}</strong> карточек.</>
               )}</p>
