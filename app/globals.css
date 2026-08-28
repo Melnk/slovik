@@ -56,6 +56,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   font-weight: 800;
   letter-spacing: -.8px;
 }
+.brand-button { padding: 0; border: 0; background: none; cursor: pointer; }
 
 .brand-mark { position: relative; width: 30px; height: 30px; display: block; transform: rotate(12deg); }
 .brand-mark i { position: absolute; width: 13px; height: 13px; border-radius: 8px 8px 2px 8px; background: var(--orange); }
@@ -229,6 +230,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .flashcard-face em { position: absolute; bottom: 34px; color: #98a29c; font-size: 10px; font-style: normal; }
 .card-number { position: absolute; right: 30px; top: 28px; color: #d4d7d1; font-family: Georgia, serif; font-size: 13px; font-style: italic; }
 .flashcard-back .card-number { color: #91ae99; }
+
+.pronunciation-button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 38px; margin: 14px auto -9px; padding: 0 14px; border: 1px solid #d8dbd5; border-radius: 99px; background: rgba(255, 254, 250, .72); color: var(--green-deep); font-size: 10px; font-weight: 800; cursor: pointer; transition: transform .2s, border-color .2s, background .2s; }
+.pronunciation-button:hover:not(:disabled) { transform: translateY(-1px); border-color: #a9c2af; background: var(--paper); }
+.pronunciation-button span { color: var(--orange); font-size: 13px; letter-spacing: -2px; }
+.pronunciation-button:disabled { opacity: .5; cursor: wait; }
 
 .answer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; margin-top: 23px; opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity .25s, transform .25s; }
 .answer-actions.is-visible { opacity: 1; transform: none; pointer-events: auto; }

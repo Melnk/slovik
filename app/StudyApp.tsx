@@ -147,36 +147,40 @@ export default function StudyApp() {
     : null;
 
   useEffect(() => {
-    let availableDecks = DEMO_DECKS;
-    try {
-      const saved = window.localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const storedDecks = JSON.parse(saved) as Deck[];
-        if (Array.isArray(storedDecks)) {
-          availableDecks = storedDecks;
-          setDecks(storedDecks);
+    const timeout = window.setTimeout(() => {
+      let availableDecks = DEMO_DECKS;
+      try {
+        const saved = window.localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const storedDecks = JSON.parse(saved) as Deck[];
+          if (Array.isArray(storedDecks)) {
+            availableDecks = storedDecks;
+            setDecks(storedDecks);
+          }
         }
-      }
 
-      const savedProgress = window.localStorage.getItem(SESSION_KEY);
-      if (savedProgress) {
-        const snapshot = JSON.parse(savedProgress) as SessionSnapshot;
-        if (
-          snapshot
-          && Array.isArray(snapshot.queue)
-          && Array.isArray(snapshot.answers)
-          && availableDecks.some((deck) => deck.id === snapshot.deckId)
-        ) {
-          setSavedSession(snapshot);
-        } else {
-          window.localStorage.removeItem(SESSION_KEY);
+        const savedProgress = window.localStorage.getItem(SESSION_KEY);
+        if (savedProgress) {
+          const snapshot = JSON.parse(savedProgress) as SessionSnapshot;
+          if (
+            snapshot
+            && Array.isArray(snapshot.queue)
+            && Array.isArray(snapshot.answers)
+            && availableDecks.some((deck) => deck.id === snapshot.deckId)
+          ) {
+            setSavedSession(snapshot);
+          } else {
+            window.localStorage.removeItem(SESSION_KEY);
+          }
         }
+      } catch {
+        // Keep the example deck if browser storage is unavailable or damaged.
+      } finally {
+        setLoaded(true);
       }
-    } catch {
-      // Keep the example deck if browser storage is unavailable or damaged.
-    } finally {
-      setLoaded(true);
-    }
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
   }, []);
 
   useEffect(() => {
@@ -200,7 +204,8 @@ export default function StudyApp() {
     };
 
     window.localStorage.setItem(SESSION_KEY, JSON.stringify(snapshot));
-    setSavedSession(snapshot);
+    const timeout = window.setTimeout(() => setSavedSession(snapshot), 0);
+    return () => window.clearTimeout(timeout);
   }, [activeDeckId, answers, cardIndex, currentCard, finished, flipped, loaded, reverse, reviewMastered, studyCards, studyMode, view]);
 
   useEffect(() => {
@@ -208,6 +213,12 @@ export default function StudyApp() {
     const timeout = window.setTimeout(() => setNotice(""), 3200);
     return () => window.clearTimeout(timeout);
   }, [notice]);
+
+  useEffect(() => {
+    return () => {
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    };
+  }, [cardIndex, view]);
 
   const clearSavedSession = useCallback(() => {
     window.localStorage.removeItem(SESSION_KEY);
@@ -271,19 +282,21 @@ export default function StudyApp() {
   }, [activeDeck, answers, cardIndex, currentCard, finishSession, finished, flipped, previewing, reviewMastered, studyCards, studyMode]);
 
   useEffect(() => {
-    if (view !== "study" || finished || studyMode !== "review" || !currentCard) {
-      setPreviewing(false);
-      return;
-    }
+    if (view !== "study" || finished || studyMode !== "review" || !currentCard) return;
 
-    setPreviewing(true);
-    setFlipped(true);
-    const timeout = window.setTimeout(() => {
+    const startTimeout = window.setTimeout(() => {
+      setPreviewing(true);
+      setFlipped(true);
+    }, 0);
+    const endTimeout = window.setTimeout(() => {
       setPreviewing(false);
       setFlipped(false);
     }, 1000);
 
-    return () => window.clearTimeout(timeout);
+    return () => {
+      window.clearTimeout(startTimeout);
+      window.clearTimeout(endTimeout);
+    };
   }, [cardIndex, currentCard, finished, studyMode, view]);
 
   useEffect(() => {
@@ -401,6 +414,19 @@ export default function StudyApp() {
     }, 0);
   }
 
+  function speak(text: string) {
+    if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+      setNotice("Озвучивание не поддерживается в этом браузере");
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = /[\u0400-\u04ff]/.test(text) ? "ru-RU" : "en-US";
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
+  }
+
   if (view === "study" && activeDeck && currentCard) {
     const score = Math.round((knownCount / Math.max(answers.length, 1)) * 100);
     const cardFront = reverse ? currentCard.back : currentCard.front;
@@ -412,10 +438,10 @@ export default function StudyApp() {
       <main className="study-shell">
         <header className="study-topbar">
           <button className="back-button" type="button" onClick={() => setView("home")} aria-label="Вернуться к наборам">←</button>
-          <a className="brand" href="#" onClick={(event) => { event.preventDefault(); setView("home"); }} aria-label="Словик — на главную">
+          <button className="brand brand-button" type="button" onClick={() => setView("home")} aria-label="Словик — на главную">
             <BrandMark />
             <span>словик</span>
-          </a>
+          </button>
           <div className="study-title-block">
             <span>{studyMode === "review" ? "Умное повторение" : "Тренировка"}</span>
             <strong>{activeDeck.title}</strong>
@@ -458,6 +484,17 @@ export default function StudyApp() {
                     <span className="card-number">{previewing ? "1s" : "✓"}</span>
                   </span>
                 </span>
+              </button>
+
+              <button
+                className="pronunciation-button"
+                type="button"
+                onClick={() => speak(flipped ? cardBack : cardFront)}
+                disabled={previewing}
+                aria-label={`Озвучить: ${flipped ? cardBack : cardFront}`}
+              >
+                <span aria-hidden="true">◖))</span>
+                Озвучить эту сторону
               </button>
 
               <div className={`answer-actions ${flipped && !previewing ? "is-visible" : ""}`}>
