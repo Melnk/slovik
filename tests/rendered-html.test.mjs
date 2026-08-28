@@ -70,11 +70,24 @@ test("does not auto-reveal the next review card", async () => {
   assert.match(source, /function startReview[\s\S]*?setFlipped\(false\)/);
 });
 
-test("randomizes study sessions and prioritizes forgotten cards", async () => {
+test("randomizes study sessions and builds a mixed five-card review", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
   assert.match(source, /function startStudy[\s\S]*?setStudyCards\(shuffle\(deck\.cards\)\)/);
   assert.match(source, /function selectReviewCards[\s\S]*?deck\.mistakes/);
-  assert.match(source, /shuffle\(forgottenCards\)\.slice\(0, MAX_REVIEW_CARDS\)/);
-  assert.match(source, /Math\.min\(FRESH_REVIEW_CARDS, deck\.cards\.length\)/);
+  assert.match(source, /const REVIEW_CARDS = 5/);
+  assert.match(source, /const DIFFICULT_REVIEW_CARDS = 3/);
+  assert.match(source, /const familiarCards = shuffle/);
+  assert.match(source, /return shuffle\(selectedCards\)/);
+});
+
+test("resets the card face before replacing its content", async () => {
+  const [source, css] = await Promise.all([
+    readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(source, /setSwitching\(true\);[\s\S]*?setFlipped\(false\);[\s\S]*?requestAnimationFrame[\s\S]*?setCardIndex/);
+  assert.match(source, /switching \? "is-switching"/);
+  assert.match(css, /\.flashcard\.is-switching \.flashcard-inner \{ transform: rotateY\(0deg\); transition: none; \}/);
 });
