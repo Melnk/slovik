@@ -149,7 +149,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .deck-tone-2 { --deck-accent: #765f93; --deck-soft: #eee8f5; --deck-glow: #d5c3e6; }
 .deck-topline { display: flex; align-items: flex-start; justify-content: space-between; }
 .deck-icon { display: grid; place-items: center; width: 45px; height: 45px; border-radius: 14px; background: var(--deck-soft); color: var(--deck-accent); font-family: Georgia, 'Times New Roman', serif; font-weight: 700; }
-.delete-button { position: relative; z-index: 1; display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .55); color: #98a19c; font-size: 20px; cursor: pointer; transition: color .2s, background .2s; }
+.deck-tools { position: relative; z-index: 1; display: flex; gap: 5px; }
+.edit-button, .delete-button { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .55); color: #98a19c; cursor: pointer; transition: color .2s, background .2s; }
+.edit-button { font-size: 16px; }
+.edit-button:hover { color: var(--deck-accent); background: white; }
+.delete-button { font-size: 20px; }
 .delete-button:hover { color: #c25238; background: white; }
 .deck-card h3 { max-width: 80%; margin: 24px 0 7px; font-family: Georgia, 'Times New Roman', serif; font-size: 24px; line-height: 1.15; font-weight: 500; }
 .deck-card > p { margin: 0; color: var(--muted); font-size: 12px; }

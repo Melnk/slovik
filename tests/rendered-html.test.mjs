@@ -89,6 +89,15 @@ test("shows how many difficult words each deck contains", async () => {
   assert.match(source, /countDifficultCards\(deck\).*?сложн\./s);
 });
 
+test("renames a deck without replacing its saved data", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /function renameDeck\(deck: Deck\)/);
+  assert.match(source, /window\.prompt\("Новое название набора", deck\.title\)/);
+  assert.match(source, /item\.id === deck\.id \? \{ \.\.\.item, title: normalizedTitle \} : item/);
+  assert.match(source, /onClick=\{\(\) => renameDeck\(deck\)\}/);
+});
+
 test("resets the card face before replacing its content", async () => {
   const [source, css] = await Promise.all([
     readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8"),

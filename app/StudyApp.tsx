@@ -449,6 +449,23 @@ export default function StudyApp() {
     window.setTimeout(() => startStudy(deck), 450);
   }
 
+  function renameDeck(deck: Deck) {
+    const nextTitle = window.prompt("Новое название набора", deck.title);
+    if (nextTitle === null) return;
+
+    const normalizedTitle = nextTitle.trim();
+    if (!normalizedTitle) {
+      setNotice("Название не может быть пустым");
+      return;
+    }
+    if (normalizedTitle === deck.title) return;
+
+    setDecks((current) => current.map((item) => (
+      item.id === deck.id ? { ...item, title: normalizedTitle } : item
+    )));
+    setNotice("Название набора изменено");
+  }
+
   function deleteDeck(deckId: string) {
     const deck = decks.find((item) => item.id === deckId);
     if (!deck || !window.confirm(`Удалить набор «${deck.title}»?`)) return;
@@ -667,7 +684,10 @@ export default function StudyApp() {
               <article className={`deck-card deck-tone-${deckIndex % 3}`} key={deck.id}>
                 <div className="deck-topline">
                   <span className="deck-icon" aria-hidden="true">{deckIndex % 3 === 0 ? "Aa" : deckIndex % 3 === 1 ? "✦" : "あ"}</span>
-                  <button className="delete-button" type="button" onClick={() => deleteDeck(deck.id)} aria-label={`Удалить набор ${deck.title}`}>×</button>
+                  <div className="deck-tools">
+                    <button className="edit-button" type="button" onClick={() => renameDeck(deck)} aria-label={`Изменить название набора ${deck.title}`}>✎</button>
+                    <button className="delete-button" type="button" onClick={() => deleteDeck(deck.id)} aria-label={`Удалить набор ${deck.title}`}>×</button>
+                  </div>
                 </div>
                 <h3>{deck.title}</h3>
                 <p>{deck.cards.length} {deck.cards.length === 1 ? "карточка" : deck.cards.length < 5 ? "карточки" : "карточек"}</p>
