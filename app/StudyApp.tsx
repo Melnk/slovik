@@ -129,6 +129,10 @@ function countUniqueCards(cards: WordCard[]) {
   return new Set(cards.map((card) => card.id)).size;
 }
 
+function countDifficultCards(deck: Deck) {
+  return deck.cards.filter((card) => (deck.mistakes?.[card.id] ?? 0) > 0).length;
+}
+
 function getSessionStats(snapshot: SessionSnapshot, deck: Deck) {
   const total = snapshot.mode === "review"
     ? new Set(snapshot.queue).size
@@ -669,7 +673,12 @@ export default function StudyApp() {
                 <p>{deck.cards.length} {deck.cards.length === 1 ? "карточка" : deck.cards.length < 5 ? "карточки" : "карточек"}</p>
                 <div className="deck-progress">
                   <span><i style={{ width: `${deck.lastScore}%` }} /></span>
-                  <small>{deck.sessions ? `Последний результат ${deck.lastScore}%` : "Ещё не изучали"}</small>
+                  <small>
+                    {deck.sessions ? `Последний результат ${deck.lastScore}%` : "Ещё не изучали"}
+                    {countDifficultCards(deck) > 0 && (
+                      <> · <b>{countDifficultCards(deck)} сложн.</b></>
+                    )}
+                  </small>
                 </div>
                 <div className="deck-actions">
                   <button className="review-button" type="button" onClick={() => startReview(deck)}>

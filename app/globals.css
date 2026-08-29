@@ -157,6 +157,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .deck-progress > span { display: block; width: 100%; height: 5px; overflow: hidden; border-radius: 99px; background: #e9eae4; }
 .deck-progress i { display: block; height: 100%; border-radius: inherit; background: var(--deck-accent); }
 .deck-progress small { display: block; margin-top: 7px; color: #98a19c; font-size: 10px; }
+.deck-progress small b { color: var(--deck-accent); font-weight: 800; }
 .deck-actions { position: absolute; left: 25px; right: 25px; bottom: 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .study-button, .review-button { display: flex; align-items: center; justify-content: space-between; height: 42px; padding: 0 13px; border: 0; border-radius: 11px; font-size: 11px; font-weight: 800; cursor: pointer; transition: transform .2s, background .2s, border-color .2s; }
 .study-button { background: var(--ink); color: white; }

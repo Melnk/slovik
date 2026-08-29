@@ -81,6 +81,14 @@ test("randomizes study sessions and builds a mixed five-card review", async () =
   assert.match(source, /return shuffle\(selectedCards\)/);
 });
 
+test("shows how many difficult words each deck contains", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /function countDifficultCards\(deck: Deck\)/);
+  assert.match(source, /deck\.cards\.filter\(\(card\) => \(deck\.mistakes\?\.\[card\.id\] \?\? 0\) > 0\)\.length/);
+  assert.match(source, /countDifficultCards\(deck\).*?сложн\./s);
+});
+
 test("resets the card face before replacing its content", async () => {
   const [source, css] = await Promise.all([
     readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8"),
