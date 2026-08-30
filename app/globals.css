@@ -150,7 +150,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .deck-topline { display: flex; align-items: flex-start; justify-content: space-between; }
 .deck-icon { display: grid; place-items: center; width: 45px; height: 45px; border-radius: 14px; background: var(--deck-soft); color: var(--deck-accent); font-family: Georgia, 'Times New Roman', serif; font-weight: 700; }
 .deck-tools { position: relative; z-index: 1; display: flex; gap: 5px; }
-.edit-button, .delete-button { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .55); color: #98a19c; cursor: pointer; transition: color .2s, background .2s; }
+.copy-button, .edit-button, .delete-button { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .55); color: #98a19c; cursor: pointer; transition: color .2s, background .2s; }
+.copy-button { font-size: 15px; }
+.copy-button:hover { color: var(--deck-accent); background: white; }
 .edit-button { font-size: 16px; }
 .edit-button:hover { color: var(--deck-accent); background: white; }
 .delete-button { font-size: 20px; }

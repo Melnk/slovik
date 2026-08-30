@@ -466,6 +466,19 @@ export default function StudyApp() {
     setNotice("Название набора изменено");
   }
 
+  async function copyDeck(deck: Deck) {
+    const wordList = deck.cards
+      .map((card) => `${card.front} — ${card.back}`)
+      .join("\n");
+
+    try {
+      await window.navigator.clipboard.writeText(wordList);
+      setNotice(`Скопировано карточек: ${deck.cards.length}`);
+    } catch {
+      window.prompt("Скопируй список слов", wordList);
+    }
+  }
+
   function deleteDeck(deckId: string) {
     const deck = decks.find((item) => item.id === deckId);
     if (!deck || !window.confirm(`Удалить набор «${deck.title}»?`)) return;
@@ -685,6 +698,7 @@ export default function StudyApp() {
                 <div className="deck-topline">
                   <span className="deck-icon" aria-hidden="true">{deckIndex % 3 === 0 ? "Aa" : deckIndex % 3 === 1 ? "✦" : "あ"}</span>
                   <div className="deck-tools">
+                    <button className="copy-button" type="button" onClick={() => copyDeck(deck)} aria-label={`Скопировать слова набора ${deck.title}`} title="Скопировать слова">⧉</button>
                     <button className="edit-button" type="button" onClick={() => renameDeck(deck)} aria-label={`Изменить название набора ${deck.title}`}>✎</button>
                     <button className="delete-button" type="button" onClick={() => deleteDeck(deck.id)} aria-label={`Удалить набор ${deck.title}`}>×</button>
                   </div>

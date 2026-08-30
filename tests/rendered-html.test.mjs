@@ -98,6 +98,16 @@ test("renames a deck without replacing its saved data", async () => {
   assert.match(source, /onClick=\{\(\) => renameDeck\(deck\)\}/);
 });
 
+test("copies a deck without changing its saved data", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /function copyDeck\(deck: Deck\)/);
+  assert.match(source, /\.map\(\(card\) => `\$\{card\.front\} — \$\{card\.back\}`\)/);
+  assert.match(source, /navigator\.clipboard\.writeText\(wordList\)/);
+  assert.match(source, /window\.prompt\("Скопируй список слов", wordList\)/);
+  assert.match(source, /onClick=\{\(\) => copyDeck\(deck\)\}/);
+});
+
 test("resets the card face before replacing its content", async () => {
   const [source, css] = await Promise.all([
     readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8"),
