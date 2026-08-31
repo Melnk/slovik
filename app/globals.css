@@ -235,10 +235,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .card-number { position: absolute; right: 30px; top: 28px; color: #d4d7d1; font-family: Georgia, serif; font-size: 13px; font-style: italic; }
 .flashcard-back .card-number { color: #91ae99; }
 
-.pronunciation-button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 38px; margin: 14px auto -9px; padding: 0 14px; border: 1px solid #d8dbd5; border-radius: 99px; background: rgba(255, 254, 250, .72); color: var(--green-deep); font-size: 10px; font-weight: 800; cursor: pointer; transition: transform .2s, border-color .2s, background .2s; }
-.pronunciation-button:hover:not(:disabled) { transform: translateY(-1px); border-color: #a9c2af; background: var(--paper); }
-.pronunciation-button span { color: var(--orange); font-size: 13px; letter-spacing: -2px; }
-.pronunciation-button:disabled { opacity: .5; cursor: wait; }
+.study-assists { display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 38px; margin: 14px auto -9px; }
+.pronunciation-button, .hint-button { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 38px; padding: 0 14px; border: 1px solid #d8dbd5; border-radius: 99px; background: rgba(255, 254, 250, .72); color: var(--green-deep); font-size: 10px; font-weight: 800; cursor: pointer; transition: transform .2s, border-color .2s, background .2s; }
+.pronunciation-button:hover:not(:disabled), .hint-button:hover:not(:disabled) { transform: translateY(-1px); border-color: #a9c2af; background: var(--paper); }
+.pronunciation-button span, .hint-button span { color: var(--orange); font-size: 13px; }
+.pronunciation-button span { letter-spacing: -2px; }
+.hint-button b { color: var(--orange); }
+.pronunciation-button:disabled, .hint-button:disabled { opacity: .65; cursor: default; }
 
 .answer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; margin-top: 23px; opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity .25s, transform .25s; }
 .answer-actions.is-visible { opacity: 1; transform: none; pointer-events: auto; }

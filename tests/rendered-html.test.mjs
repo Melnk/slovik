@@ -63,6 +63,16 @@ test("offers pronunciation for the visible card side", async () => {
   assert.match(source, /flipped \? cardBack : cardFront/);
 });
 
+test("reveals only the first letter as an optional study hint", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /const \[revealedHint, setRevealedHint\] = useState<string \| null>\(null\)/);
+  assert.match(source, /const firstLetterHint = cardFront\.trim\(\)\.charAt\(0\)\.toLocaleUpperCase\(\)/);
+  assert.match(source, /onClick=\{\(\) => setRevealedHint\(firstLetterHint\)\}/);
+  assert.match(source, /Начинается на «<b>\{revealedHint\}<\/b>»/);
+  assert.match(source, /setFlipped\(false\);[\s\S]*?setRevealedHint\(null\);/);
+});
+
 test("does not auto-reveal the next review card", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 

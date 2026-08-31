@@ -168,6 +168,7 @@ export default function StudyApp() {
   const [reviewMastered, setReviewMastered] = useState<string[]>([]);
   const [switching, setSwitching] = useState(false);
   const [finished, setFinished] = useState(false);
+  const [revealedHint, setRevealedHint] = useState<string | null>(null);
   const [savedSession, setSavedSession] = useState<SessionSnapshot | null>(null);
   const [notice, setNotice] = useState("");
   const titleRef = useRef<HTMLInputElement>(null);
@@ -284,6 +285,7 @@ export default function StudyApp() {
   const advanceCard = useCallback(() => {
     setSwitching(true);
     setFlipped(false);
+    setRevealedHint(null);
 
     const contentFrame = window.requestAnimationFrame(() => {
       setCardIndex((index) => index + 1);
@@ -375,6 +377,7 @@ export default function StudyApp() {
     setReviewMastered([]);
     setSwitching(false);
     setFinished(false);
+    setRevealedHint(null);
     setView("study");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -390,6 +393,7 @@ export default function StudyApp() {
     setReviewMastered([]);
     setSwitching(false);
     setFinished(false);
+    setRevealedHint(null);
     setView("study");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -423,6 +427,7 @@ export default function StudyApp() {
     setReviewMastered(snapshot.reviewMastered);
     setSwitching(false);
     setFinished(false);
+    setRevealedHint(null);
     setView("study");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -512,6 +517,7 @@ export default function StudyApp() {
     const score = Math.round((knownCount / Math.max(answers.length, 1)) * 100);
     const cardFront = reverse ? currentCard.back : currentCard.front;
     const cardBack = reverse ? currentCard.front : currentCard.back;
+    const firstLetterHint = cardFront.trim().charAt(0).toLocaleUpperCase();
     const reviewCardCount = countUniqueCards(studyCards);
     const progressCurrent = studyMode === "review" ? reviewMastered.length : cardIndex + 1;
     const progressTotal = studyMode === "review" ? reviewCardCount : studyCards.length;
@@ -528,7 +534,7 @@ export default function StudyApp() {
             <span>{studyMode === "review" ? "Умное повторение" : "Тренировка"}</span>
             <strong>{activeDeck.title}</strong>
           </div>
-          <button className="direction-button" type="button" onClick={() => { setReverse((value) => !value); setFlipped(false); }} aria-label="Поменять стороны карточек" disabled={switching}>
+          <button className="direction-button" type="button" onClick={() => { setReverse((value) => !value); setFlipped(false); setRevealedHint(null); }} aria-label="Поменять стороны карточек" disabled={switching}>
             {reverse ? "RU → EN" : "EN → RU"} <span aria-hidden="true">⇄</span>
           </button>
         </header>
@@ -545,7 +551,7 @@ export default function StudyApp() {
                 {studyMode === "review" ? (
                   <span className="review-loop-note">↻ сложные вернутся</span>
                 ) : (
-                  <button type="button" onClick={() => { setStudyCards(shuffle(studyCards)); setCardIndex(0); setAnswers([]); setFlipped(false); }}>
+                  <button type="button" onClick={() => { setStudyCards(shuffle(studyCards)); setCardIndex(0); setAnswers([]); setFlipped(false); setRevealedHint(null); }}>
                     Перемешать
                   </button>
                 )}
@@ -568,16 +574,30 @@ export default function StudyApp() {
                 </span>
               </button>
 
-              <button
-                className="pronunciation-button"
-                type="button"
-                onClick={() => speak(flipped ? cardBack : cardFront)}
-                disabled={switching}
-                aria-label={`Озвучить: ${flipped ? cardBack : cardFront}`}
-              >
-                <span aria-hidden="true">◖))</span>
-                Озвучить эту сторону
-              </button>
+              <div className="study-assists">
+                {!flipped && (
+                  <button
+                    className="hint-button"
+                    type="button"
+                    onClick={() => setRevealedHint(firstLetterHint)}
+                    disabled={switching || revealedHint !== null}
+                    aria-label="Показать первую букву слова"
+                  >
+                    <span aria-hidden="true">✦</span>
+                    {revealedHint === null ? "Первая буква" : <>Начинается на «<b>{revealedHint}</b>»</>}
+                  </button>
+                )}
+                <button
+                  className="pronunciation-button"
+                  type="button"
+                  onClick={() => speak(flipped ? cardBack : cardFront)}
+                  disabled={switching}
+                  aria-label={`Озвучить: ${flipped ? cardBack : cardFront}`}
+                >
+                  <span aria-hidden="true">◖))</span>
+                  Озвучить эту сторону
+                </button>
+              </div>
 
               <div className={`answer-actions ${flipped && !switching ? "is-visible" : ""}`}>
                 <button className="answer-button forgot" type="button" onClick={() => markAnswer(false)} disabled={!flipped || switching}>
