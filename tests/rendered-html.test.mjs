@@ -35,6 +35,8 @@ test("server-renders the Slovik home page", async () => {
   assert.match(html, /Все новые слова/);
   assert.match(html, /Мои наборы/);
   assert.match(html, /Наборы сохраняются прямо в браузере/);
+  assert.match(html, /Устанавливать ничего не нужно/);
+  assert.match(html, /Преподавателю и ученикам/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape/);
 });
 
@@ -67,9 +69,9 @@ test("reveals only the first letter as an optional study hint", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
   assert.match(source, /const \[revealedHint, setRevealedHint\] = useState<string \| null>\(null\)/);
-  assert.match(source, /const firstLetterHint = cardFront\.trim\(\)\.charAt\(0\)\.toLocaleUpperCase\(\)/);
+  assert.match(source, /const firstLetterHint = cardBack\.trim\(\)\.charAt\(0\)\.toLocaleUpperCase\(\)/);
   assert.match(source, /onClick=\{\(\) => setRevealedHint\(firstLetterHint\)\}/);
-  assert.match(source, /Начинается на «<b>\{revealedHint\}<\/b>»/);
+  assert.match(source, /Ответ начинается на «<b>\{revealedHint\}<\/b>»/);
   assert.match(source, /setFlipped\(false\);[\s\S]*?setRevealedHint\(null\);/);
 });
 

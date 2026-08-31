@@ -517,7 +517,7 @@ export default function StudyApp() {
     const score = Math.round((knownCount / Math.max(answers.length, 1)) * 100);
     const cardFront = reverse ? currentCard.back : currentCard.front;
     const cardBack = reverse ? currentCard.front : currentCard.back;
-    const firstLetterHint = cardFront.trim().charAt(0).toLocaleUpperCase();
+    const firstLetterHint = cardBack.trim().charAt(0).toLocaleUpperCase();
     const reviewCardCount = countUniqueCards(studyCards);
     const progressCurrent = studyMode === "review" ? reviewMastered.length : cardIndex + 1;
     const progressTotal = studyMode === "review" ? reviewCardCount : studyCards.length;
@@ -581,10 +581,10 @@ export default function StudyApp() {
                     type="button"
                     onClick={() => setRevealedHint(firstLetterHint)}
                     disabled={switching || revealedHint !== null}
-                    aria-label="Показать первую букву слова"
+                    aria-label="Показать первую букву ответа"
                   >
                     <span aria-hidden="true">✦</span>
-                    {revealedHint === null ? "Первая буква" : <>Начинается на «<b>{revealedHint}</b>»</>}
+                    {revealedHint === null ? "Подсказка ответа" : <>Ответ начинается на «<b>{revealedHint}</b>»</>}
                   </button>
                 )}
                 <button
@@ -644,6 +644,7 @@ export default function StudyApp() {
         <nav className="nav-links" aria-label="Основная навигация">
           <a className="active" href="#sets">Мои наборы</a>
           <a href="#how">Как учиться</a>
+          <a href="#install">На телефон</a>
         </nav>
         <button className="topbar-create" type="button" onClick={focusImporter}><span>＋</span> Новый набор</button>
         <div className="avatar" aria-label="Локальный профиль">О</div>
@@ -765,6 +766,32 @@ export default function StudyApp() {
           <li><span>02</span><div><strong>Переверни</strong><p>Вспомни перевод и открой обратную сторону.</p></div></li>
           <li><span>03</span><div><strong>Закрепи</strong><p>Сложные слова сами вернутся в случайном порядке.</p></div></li>
         </ol>
+      </section>
+
+      <section className="install-section" id="install">
+        <div className="install-heading">
+          <span className="eyebrow">БЕЗ СЛОЖНОЙ УСТАНОВКИ</span>
+          <h2>Устанавливать ничего не нужно</h2>
+          <p>Открой Словик в браузере и при желании добавь его значок на главный экран телефона.</p>
+        </div>
+        <div className="install-options">
+          <article>
+            <span className="install-icon" aria-hidden="true">↗</span>
+            <div>
+              <strong>На телефоне</strong>
+              <p><b>iPhone или iPad:</b> Safari → «Поделиться» → «На экран Домой».</p>
+              <p><b>Android:</b> Chrome → меню ⋮ → «Добавить на главный экран».</p>
+            </div>
+          </article>
+          <article>
+            <span className="install-icon teacher" aria-hidden="true">Aa</span>
+            <div>
+              <strong>Преподавателю и ученикам</strong>
+              <p>Нажми ⧉ у готового набора и отправь список в чат. Ученику останется вставить его в Словик и нажать «Создать карточки».</p>
+              <small>У каждого сохраняются свои результаты на его устройстве.</small>
+            </div>
+          </article>
+        </div>
       </section>
 
       <footer className="footer">

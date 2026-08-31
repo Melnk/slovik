@@ -189,6 +189,18 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .steps-list strong { display: block; margin-bottom: 5px; font-size: 15px; }
 .steps-list p { margin: 0; color: #afbbb4; font-size: 13px; line-height: 1.5; }
 
+.install-section { width: min(1180px, calc(100% - 48px)); margin: 28px auto 0; padding: 70px; border: 1px solid rgba(36, 49, 44, .1); border-radius: 30px; background: rgba(255, 254, 250, .78); display: grid; grid-template-columns: .8fr 1.2fr; gap: 80px; }
+.install-heading h2 { margin: 12px 0 14px; font-family: Georgia, 'Times New Roman', serif; font-size: 38px; line-height: 1.08; font-weight: 500; letter-spacing: -1px; }
+.install-heading > p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
+.install-options { display: grid; gap: 14px; }
+.install-options article { display: grid; grid-template-columns: 46px 1fr; gap: 16px; padding: 20px; border: 1px solid var(--line); border-radius: 17px; background: var(--paper); }
+.install-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; background: #ffebe3; color: var(--orange); font-size: 20px; font-weight: 800; }
+.install-icon.teacher { background: #e4efe6; color: var(--green-deep); font-family: Georgia, 'Times New Roman', serif; font-size: 14px; }
+.install-options strong { display: block; margin: 2px 0 7px; font-size: 14px; }
+.install-options p { margin: 3px 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+.install-options b { color: var(--ink); }
+.install-options small { display: block; margin-top: 7px; color: #89958e; font-size: 10px; }
+
 .footer { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 45px 0; display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 11px; }
 .brand.small { font-size: 18px; }
 .brand.small .brand-mark { width: 23px; height: 23px; }
@@ -275,6 +287,7 @@ kbd { display: inline-block; min-width: 22px; margin: 0 3px; padding: 3px 6px; b
   .import-card { width: min(100%, 560px); margin: 0 auto; }
   .deck-grid { grid-template-columns: repeat(2, 1fr); }
   .how-section { grid-template-columns: 1fr; gap: 45px; padding: 60px 50px; }
+  .install-section { grid-template-columns: 1fr; gap: 38px; padding: 55px 50px; }
 }
 
 @media (max-width: 620px) {
@@ -299,6 +312,10 @@ kbd { display: inline-block; min-width: 22px; margin: 0 3px; padding: 3px 6px; b
   .deck-grid { grid-template-columns: 1fr; }
   .how-section { width: 100%; padding: 58px 24px; border-radius: 0; }
   .how-copy h2 { font-size: 34px; }
+  .install-section { width: 100%; margin-top: 0; padding: 50px 20px; border-inline: 0; border-radius: 0; }
+  .install-heading h2 { font-size: 32px; }
+  .install-options article { grid-template-columns: 40px 1fr; gap: 12px; padding: 17px; }
+  .install-icon { width: 38px; height: 38px; }
   .footer { width: min(100% - 30px, 1180px); display: block; text-align: center; }
   .footer .brand { justify-content: center; margin-bottom: 15px; }
   .study-topbar { width: min(100% - 24px, 1060px); gap: 10px; }
