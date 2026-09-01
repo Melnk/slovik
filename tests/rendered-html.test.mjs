@@ -75,6 +75,17 @@ test("reveals only the first letter as an optional study hint", async () => {
   assert.match(source, /setFlipped\(false\);[\s\S]*?setRevealedHint\(null\);/);
 });
 
+test("postpones an unrevealed card without recording an answer", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /const postponeCard = useCallback/);
+  assert.match(source, /next\.splice\(cardIndex, 1\)/);
+  assert.match(source, /next\.push\(postponed\)/);
+  assert.match(source, /onClick=\{postponeCard\}/);
+  assert.match(source, /Вернуться позже/);
+  assert.doesNotMatch(source.match(/const postponeCard[\s\S]*?\}, \[cardIndex/)?.[0] ?? "", /setAnswers|markAnswer/);
+});
+
 test("does not auto-reveal the next review card", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 

@@ -298,6 +298,28 @@ export default function StudyApp() {
     switchFramesRef.current = [contentFrame];
   }, []);
 
+  const postponeCard = useCallback(() => {
+    if (finished || switching || flipped || cardIndex >= studyCards.length - 1) return;
+    setSwitching(true);
+    setFlipped(false);
+    setRevealedHint(null);
+
+    const contentFrame = window.requestAnimationFrame(() => {
+      setStudyCards((current) => {
+        const next = [...current];
+        const [postponed] = next.splice(cardIndex, 1);
+        if (postponed) next.push(postponed);
+        return next;
+      });
+      const unlockFrame = window.requestAnimationFrame(() => {
+        setSwitching(false);
+        switchFramesRef.current = [];
+      });
+      switchFramesRef.current = [unlockFrame];
+    });
+    switchFramesRef.current = [contentFrame];
+  }, [cardIndex, finished, flipped, studyCards.length, switching]);
+
   const markAnswer = useCallback((known: boolean) => {
     if (finished || switching || !currentCard || !flipped) return;
     const nextAnswers = [...answers, known];
@@ -585,6 +607,18 @@ export default function StudyApp() {
                   >
                     <span aria-hidden="true">✦</span>
                     {revealedHint === null ? "Подсказка ответа" : <>Ответ начинается на «<b>{revealedHint}</b>»</>}
+                  </button>
+                )}
+                {!flipped && cardIndex < studyCards.length - 1 && (
+                  <button
+                    className="postpone-button"
+                    type="button"
+                    onClick={postponeCard}
+                    disabled={switching}
+                    aria-label="Вернуться к этому слову позже"
+                  >
+                    <span aria-hidden="true">↷</span>
+                    Вернуться позже
                   </button>
                 )}
                 <button
