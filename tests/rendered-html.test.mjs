@@ -65,14 +65,15 @@ test("offers pronunciation for the visible card side", async () => {
   assert.match(source, /flipped \? cardBack : cardFront/);
 });
 
-test("reveals only the first letter as an optional study hint", async () => {
+test("reveals the hidden answer one letter at a time without showing it completely", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
-  assert.match(source, /const \[revealedHint, setRevealedHint\] = useState<string \| null>\(null\)/);
-  assert.match(source, /const firstLetterHint = cardBack\.trim\(\)\.charAt\(0\)\.toLocaleUpperCase\(\)/);
-  assert.match(source, /onClick=\{\(\) => setRevealedHint\(firstLetterHint\)\}/);
-  assert.match(source, /Ответ начинается на «<b>\{revealedHint\}<\/b>»/);
-  assert.match(source, /setFlipped\(false\);[\s\S]*?setRevealedHint\(null\);/);
+  assert.match(source, /function buildProgressiveHint\(answer: string, revealedLetters: number\)/);
+  assert.match(source, /letterIndex <= revealedLetters \? character : "·"/);
+  assert.match(source, /const maximumHintLetters = Math\.max\(0, hintLetterCount - 1\)/);
+  assert.match(source, /setRevealedHintLetters\(\(count\) => Math\.min\(count \+ 1, maximumHintLetters\)\)/);
+  assert.match(source, /Подсказка: <b>\{progressiveHint\}<\/b>/);
+  assert.match(source, /setFlipped\(false\);[\s\S]*?setRevealedHintLetters\(0\);/);
 });
 
 test("postpones an unrevealed card without recording an answer", async () => {

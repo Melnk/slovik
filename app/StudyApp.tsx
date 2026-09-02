@@ -133,6 +133,16 @@ function countDifficultCards(deck: Deck) {
   return deck.cards.filter((card) => (deck.mistakes?.[card.id] ?? 0) > 0).length;
 }
 
+function buildProgressiveHint(answer: string, revealedLetters: number) {
+  let letterIndex = 0;
+
+  return Array.from(answer.trim()).map((character) => {
+    if (!/[\p{L}\p{N}]/u.test(character)) return character;
+    letterIndex += 1;
+    return letterIndex <= revealedLetters ? character : "·";
+  }).join("");
+}
+
 function getSessionStats(snapshot: SessionSnapshot, deck: Deck) {
   const total = snapshot.mode === "review"
     ? new Set(snapshot.queue).size
@@ -168,7 +178,7 @@ export default function StudyApp() {
   const [reviewMastered, setReviewMastered] = useState<string[]>([]);
   const [switching, setSwitching] = useState(false);
   const [finished, setFinished] = useState(false);
-  const [revealedHint, setRevealedHint] = useState<string | null>(null);
+  const [revealedHintLetters, setRevealedHintLetters] = useState(0);
   const [savedSession, setSavedSession] = useState<SessionSnapshot | null>(null);
   const [notice, setNotice] = useState("");
   const titleRef = useRef<HTMLInputElement>(null);
@@ -285,7 +295,7 @@ export default function StudyApp() {
   const advanceCard = useCallback(() => {
     setSwitching(true);
     setFlipped(false);
-    setRevealedHint(null);
+    setRevealedHintLetters(0);
 
     const contentFrame = window.requestAnimationFrame(() => {
       setCardIndex((index) => index + 1);
@@ -302,7 +312,7 @@ export default function StudyApp() {
     if (finished || switching || flipped || cardIndex >= studyCards.length - 1) return;
     setSwitching(true);
     setFlipped(false);
-    setRevealedHint(null);
+    setRevealedHintLetters(0);
 
     const contentFrame = window.requestAnimationFrame(() => {
       setStudyCards((current) => {
@@ -399,7 +409,7 @@ export default function StudyApp() {
     setReviewMastered([]);
     setSwitching(false);
     setFinished(false);
-    setRevealedHint(null);
+    setRevealedHintLetters(0);
     setView("study");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -415,7 +425,7 @@ export default function StudyApp() {
     setReviewMastered([]);
     setSwitching(false);
     setFinished(false);
-    setRevealedHint(null);
+    setRevealedHintLetters(0);
     setView("study");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -449,7 +459,7 @@ export default function StudyApp() {
     setReviewMastered(snapshot.reviewMastered);
     setSwitching(false);
     setFinished(false);
-    setRevealedHint(null);
+    setRevealedHintLetters(0);
     setView("study");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -539,7 +549,9 @@ export default function StudyApp() {
     const score = Math.round((knownCount / Math.max(answers.length, 1)) * 100);
     const cardFront = reverse ? currentCard.back : currentCard.front;
     const cardBack = reverse ? currentCard.front : currentCard.back;
-    const firstLetterHint = cardBack.trim().charAt(0).toLocaleUpperCase();
+    const hintLetterCount = Array.from(cardBack).filter((character) => /[\p{L}\p{N}]/u.test(character)).length;
+    const maximumHintLetters = Math.max(0, hintLetterCount - 1);
+    const progressiveHint = buildProgressiveHint(cardBack, revealedHintLetters);
     const reviewCardCount = countUniqueCards(studyCards);
     const progressCurrent = studyMode === "review" ? reviewMastered.length : cardIndex + 1;
     const progressTotal = studyMode === "review" ? reviewCardCount : studyCards.length;
@@ -556,7 +568,7 @@ export default function StudyApp() {
             <span>{studyMode === "review" ? "Умное повторение" : "Тренировка"}</span>
             <strong>{activeDeck.title}</strong>
           </div>
-          <button className="direction-button" type="button" onClick={() => { setReverse((value) => !value); setFlipped(false); setRevealedHint(null); }} aria-label="Поменять стороны карточек" disabled={switching}>
+          <button className="direction-button" type="button" onClick={() => { setReverse((value) => !value); setFlipped(false); setRevealedHintLetters(0); }} aria-label="Поменять стороны карточек" disabled={switching}>
             {reverse ? "RU → EN" : "EN → RU"} <span aria-hidden="true">⇄</span>
           </button>
         </header>
@@ -573,7 +585,7 @@ export default function StudyApp() {
                 {studyMode === "review" ? (
                   <span className="review-loop-note">↻ сложные вернутся</span>
                 ) : (
-                  <button type="button" onClick={() => { setStudyCards(shuffle(studyCards)); setCardIndex(0); setAnswers([]); setFlipped(false); setRevealedHint(null); }}>
+                  <button type="button" onClick={() => { setStudyCards(shuffle(studyCards)); setCardIndex(0); setAnswers([]); setFlipped(false); setRevealedHintLetters(0); }}>
                     Перемешать
                   </button>
                 )}
@@ -601,12 +613,12 @@ export default function StudyApp() {
                   <button
                     className="hint-button"
                     type="button"
-                    onClick={() => setRevealedHint(firstLetterHint)}
-                    disabled={switching || revealedHint !== null}
-                    aria-label="Показать первую букву ответа"
+                    onClick={() => setRevealedHintLetters((count) => Math.min(count + 1, maximumHintLetters))}
+                    disabled={switching || revealedHintLetters >= maximumHintLetters}
+                    aria-label={revealedHintLetters === 0 ? "Показать первую букву ответа" : "Показать ещё одну букву ответа"}
                   >
                     <span aria-hidden="true">✦</span>
-                    {revealedHint === null ? "Подсказка ответа" : <>Ответ начинается на «<b>{revealedHint}</b>»</>}
+                    {revealedHintLetters === 0 ? "Подсказка ответа" : <>Подсказка: <b>{progressiveHint}</b></>}
                   </button>
                 )}
                 {!flipped && cardIndex < studyCards.length - 1 && (
