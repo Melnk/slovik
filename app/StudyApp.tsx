@@ -384,6 +384,14 @@ export default function StudyApp() {
     advanceCard();
   }, [activeDeck, activeDeckId, advanceCard, answers, cardIndex, currentCard, finishSession, finished, flipped, reviewMastered, studyCards, studyMode, switching]);
 
+  const revealAnswerHint = useCallback(() => {
+    if (finished || switching || flipped || !currentCard) return;
+    const hiddenAnswer = reverse ? currentCard.front : currentCard.back;
+    const hintLetterCount = Array.from(hiddenAnswer).filter((character) => /[\p{L}\p{N}]/u.test(character)).length;
+    const maximumHintLetters = Math.max(0, hintLetterCount - 1);
+    setRevealedHintLetters((count) => Math.min(count + 1, maximumHintLetters));
+  }, [currentCard, finished, flipped, reverse, switching]);
+
   useEffect(() => {
     if (view !== "study" || finished) return;
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -393,10 +401,14 @@ export default function StudyApp() {
       }
       if (event.key === "ArrowLeft" && flipped && !switching) markAnswer(false);
       if (event.key === "ArrowRight" && flipped && !switching) markAnswer(true);
+      if (event.code === "KeyH" && !event.repeat && !flipped && !switching) {
+        event.preventDefault();
+        revealAnswerHint();
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [finished, flipped, markAnswer, switching, view]);
+  }, [finished, flipped, markAnswer, revealAnswerHint, switching, view]);
 
   function startStudy(deck: Deck) {
     clearSavedSession();
@@ -613,7 +625,7 @@ export default function StudyApp() {
                   <button
                     className="hint-button"
                     type="button"
-                    onClick={() => setRevealedHintLetters((count) => Math.min(count + 1, maximumHintLetters))}
+                    onClick={revealAnswerHint}
                     disabled={switching || revealedHintLetters >= maximumHintLetters}
                     aria-label={revealedHintLetters === 0 ? "Показать первую букву ответа" : "Показать ещё одну букву ответа"}
                   >
@@ -653,7 +665,7 @@ export default function StudyApp() {
                   <strong>Вспомнил!</strong><small>стрелка вправо</small><span>→</span>
                 </button>
               </div>
-              <p className="keyboard-tip"><kbd>Пробел</kbd> перевернуть · <kbd>←</kbd><kbd>→</kbd> ответить</p>
+              <p className="keyboard-tip"><kbd>Пробел</kbd> перевернуть · <kbd>H</kbd> подсказка · <kbd>←</kbd><kbd>→</kbd> ответить</p>
             </>
           ) : (
             <div className="result-card">

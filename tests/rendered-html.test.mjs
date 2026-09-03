@@ -76,6 +76,15 @@ test("reveals the hidden answer one letter at a time without showing it complete
   assert.match(source, /setFlipped\(false\);[\s\S]*?setRevealedHintLetters\(0\);/);
 });
 
+test("reveals the next hint letter with the H key", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /event\.code === "KeyH"/);
+  assert.match(source, /!event\.repeat && !flipped && !switching/);
+  assert.match(source, /revealAnswerHint\(\)/);
+  assert.match(source, /<kbd>H<\/kbd> подсказка/);
+});
+
 test("postpones an unrevealed card without recording an answer", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
