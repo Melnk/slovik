@@ -426,11 +426,11 @@ export default function StudyApp() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function startReview(deck: Deck) {
+  function startReview(deck: Deck, focusedCards?: WordCard[]) {
     clearSavedSession();
     setStudyMode("review");
     setActiveDeckId(deck.id);
-    setStudyCards(selectReviewCards(deck));
+    setStudyCards(focusedCards ? shuffle(focusedCards) : selectReviewCards(deck));
     setCardIndex(0);
     setFlipped(false);
     setAnswers([]);
@@ -565,6 +565,9 @@ export default function StudyApp() {
     const maximumHintLetters = Math.max(0, hintLetterCount - 1);
     const progressiveHint = buildProgressiveHint(cardBack, revealedHintLetters);
     const reviewCardCount = countUniqueCards(studyCards);
+    const missedCards = studyMode === "learn"
+      ? studyCards.filter((_, index) => answers[index] === false)
+      : [];
     const progressCurrent = studyMode === "review" ? reviewMastered.length : cardIndex + 1;
     const progressTotal = studyMode === "review" ? reviewCardCount : studyCards.length;
 
@@ -682,7 +685,15 @@ export default function StudyApp() {
               </div>
               {studyMode === "review" && <small className="score-caption">точность ответов</small>}
               <div className="result-actions">
-                <button className="secondary-button" type="button" onClick={() => startReview(activeDeck)}>{studyMode === "review" ? "Повторить ещё раз" : "Повторить сложные"}</button>
+                {studyMode === "learn" && missedCards.length > 0 ? (
+                  <button className="secondary-button" type="button" onClick={() => startReview(activeDeck, missedCards)}>
+                    Повторить ошибки ({missedCards.length})
+                  </button>
+                ) : (
+                  <button className="secondary-button" type="button" onClick={() => startReview(activeDeck)}>
+                    {studyMode === "review" ? "Повторить ещё раз" : "Закрепить 5 слов"}
+                  </button>
+                )}
                 <button className="primary-button compact" type="button" onClick={() => setView("home")}>К моим наборам →</button>
               </div>
             </div>

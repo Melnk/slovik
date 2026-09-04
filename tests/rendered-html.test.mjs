@@ -96,6 +96,16 @@ test("postpones an unrevealed card without recording an answer", async () => {
   assert.doesNotMatch(source.match(/const postponeCard[\s\S]*?\}, \[cardIndex/)?.[0] ?? "", /setAnswers|markAnswer/);
 });
 
+test("starts a focused review with only the mistakes from the finished study session", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /const missedCards = studyMode === "learn"[\s\S]*?answers\[index\] === false/);
+  assert.match(source, /function startReview\(deck: Deck, focusedCards\?: WordCard\[\]\)/);
+  assert.match(source, /setStudyCards\(focusedCards \? shuffle\(focusedCards\) : selectReviewCards\(deck\)\)/);
+  assert.match(source, /startReview\(activeDeck, missedCards\)/);
+  assert.match(source, /Повторить ошибки \(\{missedCards\.length\}\)/);
+});
+
 test("does not auto-reveal the next review card", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
