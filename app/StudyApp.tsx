@@ -167,6 +167,7 @@ export default function StudyApp() {
   const [loaded, setLoaded] = useState(false);
   const [title, setTitle] = useState("Английский для путешествий");
   const [rawText, setRawText] = useState(SAMPLE_TEXT);
+  const [deckSearch, setDeckSearch] = useState("");
   const [view, setView] = useState<View>("home");
   const [studyMode, setStudyMode] = useState<StudyMode>("learn");
   const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
@@ -185,6 +186,16 @@ export default function StudyApp() {
   const switchFramesRef = useRef<number[]>([]);
 
   const parsed = useMemo(() => parsePairs(rawText), [rawText]);
+  const visibleDecks = useMemo(() => {
+    const query = deckSearch.trim().toLocaleLowerCase();
+    return decks.map((deck, deckIndex) => ({ deck, deckIndex })).filter(({ deck }) => (
+      !query || deck.title.toLocaleLowerCase().includes(query)
+      || deck.cards.some((card) => (
+        card.front.toLocaleLowerCase().includes(query)
+        || card.back.toLocaleLowerCase().includes(query)
+      ))
+    ));
+  }, [decks, deckSearch]);
   const activeDeck = decks.find((deck) => deck.id === activeDeckId) ?? null;
   const currentCard = studyCards[cardIndex];
   const knownCount = answers.filter(Boolean).length;
@@ -781,9 +792,30 @@ export default function StudyApp() {
           </div>
         )}
 
-        {decks.length ? (
+        {decks.length > 0 && (
+          <div className="deck-search">
+            <label htmlFor="deck-search">Найти набор</label>
+            <div className="deck-search-controls">
+              <input
+                id="deck-search"
+                type="search"
+                className="title-input"
+                value={deckSearch}
+                onChange={(event) => setDeckSearch(event.target.value)}
+                placeholder="Название, слово или перевод"
+                aria-describedby="deck-search-count"
+              />
+              {deckSearch && (
+                <button className="secondary-button" type="button" onClick={() => setDeckSearch("")}>Сбросить</button>
+              )}
+            </div>
+            <p id="deck-search-count" role="status">Наборов: {visibleDecks.length} из {decks.length}</p>
+          </div>
+        )}
+
+        {visibleDecks.length ? (
           <div className="deck-grid">
-            {decks.map((deck, deckIndex) => (
+            {visibleDecks.map(({ deck, deckIndex }) => (
               <article className={`deck-card deck-tone-${deckIndex % 3}`} key={deck.id}>
                 <div className="deck-topline">
                   <span className="deck-icon" aria-hidden="true">{deckIndex % 3 === 0 ? "Aa" : deckIndex % 3 === 1 ? "✦" : "あ"}</span>
@@ -814,6 +846,11 @@ export default function StudyApp() {
                 </div>
               </article>
             ))}
+          </div>
+        ) : decks.length > 0 ? (
+          <div className="empty-library">
+            <h3>Наборы не найдены</h3>
+            <p>Попробуй другое слово или перевод либо сбрось поиск.</p>
           </div>
         ) : (
           <div className="empty-library">
