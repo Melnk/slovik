@@ -106,6 +106,16 @@ test("starts a focused review with only the mistakes from the finished study ses
   assert.match(source, /Повторить ошибки \(\{missedCards\.length\}\)/);
 });
 
+test("shows a live answer summary during a study session", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /const forgottenCount = answers\.length - knownCount/);
+  assert.match(source, /answers\.length > 0 && \(/);
+  assert.match(source, /Вспомнил: <strong>\{knownCount\}<\/strong>/);
+  assert.match(source, /Повторить: <strong>\{forgottenCount\}<\/strong>/);
+  assert.match(source, /aria-label=\{`Текущий результат: вспомнил \$\{knownCount\}, нужно повторить \$\{forgottenCount\}`\}/);
+});
+
 test("does not auto-reveal the next review card", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 

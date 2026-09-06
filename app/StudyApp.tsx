@@ -199,6 +199,7 @@ export default function StudyApp() {
   const activeDeck = decks.find((deck) => deck.id === activeDeckId) ?? null;
   const currentCard = studyCards[cardIndex];
   const knownCount = answers.filter(Boolean).length;
+  const forgottenCount = answers.length - knownCount;
   const savedDeck = savedSession
     ? decks.find((deck) => deck.id === savedSession.deckId) ?? null
     : null;
@@ -616,6 +617,13 @@ export default function StudyApp() {
                   </button>
                 )}
               </div>
+
+              {answers.length > 0 && (
+                <div className="live-answer-stats" role="status" aria-label={`Текущий результат: вспомнил ${knownCount}, нужно повторить ${forgottenCount}`}>
+                  <span className="is-known"><i aria-hidden="true">✓</i> Вспомнил: <strong>{knownCount}</strong></span>
+                  <span className="is-forgotten"><i aria-hidden="true">↻</i> Повторить: <strong>{forgottenCount}</strong></span>
+                </div>
+              )}
 
               <button className={`flashcard ${flipped ? "is-flipped" : ""} ${switching ? "is-switching" : ""}`} type="button" onClick={() => { if (!switching) setFlipped((value) => !value); }} aria-label={flipped ? `Перевод: ${cardBack}` : `Слово: ${cardFront}. Нажмите, чтобы увидеть перевод`}>
                 <span className="flashcard-inner">
