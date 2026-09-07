@@ -85,6 +85,15 @@ test("reveals the next hint letter with the H key", async () => {
   assert.match(source, /<kbd>H<\/kbd> подсказка/);
 });
 
+test("pronounces the visible card side with the P key", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /event\.code === "KeyP"/);
+  assert.match(source, /!event\.repeat && !switching && currentCard/);
+  assert.match(source, /speak\(flipped[\s\S]*?currentCard\.front[\s\S]*?currentCard\.back/);
+  assert.match(source, /<kbd>P<\/kbd> озвучить/);
+});
+
 test("postpones an unrevealed card without recording an answer", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
