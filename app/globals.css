@@ -171,13 +171,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .deck-progress small { display: block; margin-top: 7px; color: #98a19c; font-size: 10px; }
 .deck-progress small b { color: var(--deck-accent); font-weight: 800; }
 .deck-actions { position: absolute; left: 25px; right: 25px; bottom: 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.study-button, .review-button { display: flex; align-items: center; justify-content: space-between; height: 42px; padding: 0 13px; border: 0; border-radius: 11px; font-size: 11px; font-weight: 800; cursor: pointer; transition: transform .2s, background .2s, border-color .2s; }
+.deck-actions.has-difficult { grid-template-columns: repeat(3, 1fr); }
+.study-button, .review-button, .difficult-button { display: flex; align-items: center; justify-content: space-between; height: 42px; padding: 0 13px; border: 0; border-radius: 11px; font-size: 11px; font-weight: 800; cursor: pointer; transition: transform .2s, background .2s, border-color .2s; }
 .study-button { background: var(--ink); color: white; }
 .study-button:hover { background: var(--deck-accent); transform: translateY(-1px); }
 .study-button span { font-size: 18px; font-weight: 400; }
-.review-button { justify-content: center; gap: 6px; border: 1px solid #d9ddd6; background: rgba(255, 255, 255, .72); color: var(--ink); }
-.review-button:hover { border-color: var(--deck-accent); color: var(--deck-accent); transform: translateY(-1px); }
-.review-button span { color: var(--deck-accent); font-size: 16px; }
+.review-button, .difficult-button { justify-content: center; gap: 6px; border: 1px solid #d9ddd6; background: rgba(255, 255, 255, .72); color: var(--ink); }
+.review-button:hover, .difficult-button:hover { border-color: var(--deck-accent); color: var(--deck-accent); transform: translateY(-1px); }
+.review-button span, .difficult-button span { color: var(--deck-accent); font-size: 16px; }
+.difficult-button { padding-inline: 9px; }
 .empty-library { padding: 60px 24px; border: 1px dashed #ccd2cc; border-radius: 22px; text-align: center; background: rgba(255, 254, 250, .45); }
 .empty-library > span { color: var(--orange); font-size: 28px; }
 .empty-library h3 { margin: 12px 0 8px; font-family: Georgia, serif; font-size: 26px; font-weight: 500; }
@@ -340,7 +342,7 @@ kbd { display: inline-block; min-width: 22px; margin: 0 3px; padding: 3px 6px; b
   .answer-actions { gap: 9px; }
   .answer-button { grid-template-columns: 20px 1fr 20px; padding-inline: 10px; }
   .deck-actions { gap: 7px; }
-  .study-button, .review-button { padding-inline: 11px; }
+  .study-button, .review-button, .difficult-button { padding-inline: 9px; }
   .result-actions { flex-direction: column-reverse; }
   .result-actions button { width: 100%; }
 }

@@ -147,8 +147,18 @@ test("shows how many difficult words each deck contains", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
   assert.match(source, /function countDifficultCards\(deck: Deck\)/);
-  assert.match(source, /deck\.cards\.filter\(\(card\) => \(deck\.mistakes\?\.\[card\.id\] \?\? 0\) > 0\)\.length/);
+  assert.match(source, /return getDifficultCards\(deck\)\.length/);
   assert.match(source, /countDifficultCards\(deck\).*?сложн\./s);
+});
+
+test("starts a focused review with every difficult word in a deck", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /function getDifficultCards\(deck: Deck\)/);
+  assert.match(source, /deck\.cards\.filter\(\(card\) => \(deck\.mistakes\?\.\[card\.id\] \?\? 0\) > 0\)/);
+  assert.match(source, /countDifficultCards\(deck\) > 0 && \(/);
+  assert.match(source, /startReview\(deck, getDifficultCards\(deck\)\)/);
+  assert.match(source, /> Сложные/);
 });
 
 test("renames a deck without replacing its saved data", async () => {

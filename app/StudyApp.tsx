@@ -129,8 +129,12 @@ function countUniqueCards(cards: WordCard[]) {
   return new Set(cards.map((card) => card.id)).size;
 }
 
+function getDifficultCards(deck: Deck) {
+  return deck.cards.filter((card) => (deck.mistakes?.[card.id] ?? 0) > 0);
+}
+
 function countDifficultCards(deck: Deck) {
-  return deck.cards.filter((card) => (deck.mistakes?.[card.id] ?? 0) > 0).length;
+  return getDifficultCards(deck).length;
 }
 
 function buildProgressiveHint(answer: string, revealedLetters: number) {
@@ -701,7 +705,7 @@ export default function StudyApp() {
               <span className="eyebrow">{studyMode === "review" ? "ПОВТОРЕНИЕ ЗАВЕРШЕНО" : "ПОДХОД ЗАВЕРШЁН"}</span>
               <h1>{studyMode === "review" ? "Подборка закреплена!" : score >= 80 ? "Отличная работа!" : score >= 50 ? "Хороший темп!" : "Первый шаг сделан!"}</h1>
               <p>{studyMode === "review" ? (
-                <>Ты закрепил <strong>{reviewCardCount}</strong> карточек. В подборке были сложные и случайные слова.</>
+                <>Ты закрепил <strong>{reviewCardCount}</strong> карточек повторными ответами.</>
               ) : (
                 <>Ты вспомнил <strong>{knownCount}</strong> из <strong>{studyCards.length}</strong> карточек.</>
               )}</p>
@@ -850,10 +854,15 @@ export default function StudyApp() {
                     )}
                   </small>
                 </div>
-                <div className="deck-actions">
+                <div className={`deck-actions ${countDifficultCards(deck) > 0 ? "has-difficult" : ""}`}>
                   <button className="review-button" type="button" onClick={() => startReview(deck)}>
                     <span aria-hidden="true">↻</span> Повторить
                   </button>
+                  {countDifficultCards(deck) > 0 && (
+                    <button className="difficult-button" type="button" onClick={() => startReview(deck, getDifficultCards(deck))}>
+                      <span aria-hidden="true">✦</span> Сложные
+                    </button>
+                  )}
                   <button className="study-button" type="button" onClick={() => startStudy(deck)}>
                     Учить <span aria-hidden="true">→</span>
                   </button>
