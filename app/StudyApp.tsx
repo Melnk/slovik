@@ -421,6 +421,10 @@ export default function StudyApp() {
         event.preventDefault();
         revealAnswerHint();
       }
+      if (event.code === "KeyR" && !event.repeat && !flipped && !switching && cardIndex < studyCards.length - 1) {
+        event.preventDefault();
+        postponeCard();
+      }
       if (event.code === "KeyP" && !event.repeat && !switching && currentCard) {
         event.preventDefault();
         speak(flipped
@@ -430,7 +434,7 @@ export default function StudyApp() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentCard, finished, flipped, markAnswer, revealAnswerHint, reverse, switching, view]);
+  }, [cardIndex, currentCard, finished, flipped, markAnswer, postponeCard, revealAnswerHint, reverse, studyCards.length, switching, view]);
 
   function startStudy(deck: Deck) {
     clearSavedSession();
@@ -697,7 +701,7 @@ export default function StudyApp() {
                   <strong>Вспомнил!</strong><small>стрелка вправо</small><span>→</span>
                 </button>
               </div>
-              <p className="keyboard-tip"><kbd>Пробел</kbd> перевернуть · <kbd>H</kbd> подсказка · <kbd>P</kbd> озвучить · <kbd>←</kbd><kbd>→</kbd> ответить</p>
+              <p className="keyboard-tip"><kbd>Пробел</kbd> перевернуть · <kbd>H</kbd> подсказка · <kbd>R</kbd> позже · <kbd>P</kbd> озвучить · <kbd>←</kbd><kbd>→</kbd> ответить</p>
             </>
           ) : (
             <div className="result-card">

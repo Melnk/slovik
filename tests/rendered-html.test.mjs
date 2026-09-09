@@ -105,6 +105,15 @@ test("postpones an unrevealed card without recording an answer", async () => {
   assert.doesNotMatch(source.match(/const postponeCard[\s\S]*?\}, \[cardIndex/)?.[0] ?? "", /setAnswers|markAnswer/);
 });
 
+test("postpones an unrevealed card with the R key", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /event\.code === "KeyR"/);
+  assert.match(source, /!event\.repeat && !flipped && !switching && cardIndex < studyCards\.length - 1/);
+  assert.match(source, /postponeCard\(\)/);
+  assert.match(source, /<kbd>R<\/kbd> позже/);
+});
+
 test("starts a focused review with only the mistakes from the finished study session", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
