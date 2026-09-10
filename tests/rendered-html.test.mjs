@@ -124,6 +124,13 @@ test("starts a focused review with only the mistakes from the finished study ses
   assert.match(source, /Повторить ошибки \(\{missedCards\.length\}\)/);
 });
 
+test("restarts the full deck directly from a finished study session", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /studyMode === "learn" && \([\s\S]*?onClick=\{\(\) => startStudy\(activeDeck\)\}/);
+  assert.match(source, /Пройти весь набор снова/);
+});
+
 test("shows a live answer summary during a study session", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 

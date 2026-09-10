@@ -727,6 +727,11 @@ export default function StudyApp() {
                     {studyMode === "review" ? "Повторить ещё раз" : "Закрепить 5 слов"}
                   </button>
                 )}
+                {studyMode === "learn" && (
+                  <button className="secondary-button" type="button" onClick={() => startStudy(activeDeck)}>
+                    Пройти весь набор снова
+                  </button>
+                )}
                 <button className="primary-button compact" type="button" onClick={() => setView("home")}>К моим наборам →</button>
               </div>
             </div>
