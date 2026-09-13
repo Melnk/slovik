@@ -131,6 +131,20 @@ test("restarts the full deck directly from a finished study session", async () =
   assert.match(source, /Пройти весь набор снова/);
 });
 
+test("shuffles only the remaining study cards without resetting progress", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /const shuffleRemainingCards = useCallback/);
+  assert.match(source, /\.\.\.current\.slice\(0, cardIndex\)/);
+  assert.match(source, /\.\.\.shuffle\(current\.slice\(cardIndex\)\)/);
+  assert.match(source, /onClick=\{shuffleRemainingCards\}/);
+  assert.match(source, /Перемешать оставшиеся/);
+  assert.doesNotMatch(
+    source.match(/const shuffleRemainingCards[\s\S]*?\}, \[cardIndex/)?.[0] ?? "",
+    /setAnswers|setCardIndex/,
+  );
+});
+
 test("shows a live answer summary during a study session", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 

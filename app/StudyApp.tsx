@@ -346,6 +346,26 @@ export default function StudyApp() {
     switchFramesRef.current = [contentFrame];
   }, [cardIndex, finished, flipped, studyCards.length, switching]);
 
+  const shuffleRemainingCards = useCallback(() => {
+    if (finished || switching || cardIndex >= studyCards.length - 1) return;
+    setSwitching(true);
+    setFlipped(false);
+    setRevealedHintLetters(0);
+
+    const contentFrame = window.requestAnimationFrame(() => {
+      setStudyCards((current) => [
+        ...current.slice(0, cardIndex),
+        ...shuffle(current.slice(cardIndex)),
+      ]);
+      const unlockFrame = window.requestAnimationFrame(() => {
+        setSwitching(false);
+        switchFramesRef.current = [];
+      });
+      switchFramesRef.current = [unlockFrame];
+    });
+    switchFramesRef.current = [contentFrame];
+  }, [cardIndex, finished, studyCards.length, switching]);
+
   const markAnswer = useCallback((known: boolean) => {
     if (finished || switching || !currentCard || !flipped) return;
     const nextAnswers = [...answers, known];
@@ -626,8 +646,12 @@ export default function StudyApp() {
                 {studyMode === "review" ? (
                   <span className="review-loop-note">↻ сложные вернутся</span>
                 ) : (
-                  <button type="button" onClick={() => { setStudyCards(shuffle(studyCards)); setCardIndex(0); setAnswers([]); setFlipped(false); setRevealedHintLetters(0); }}>
-                    Перемешать
+                  <button
+                    type="button"
+                    onClick={shuffleRemainingCards}
+                    disabled={switching || cardIndex >= studyCards.length - 1}
+                  >
+                    Перемешать оставшиеся
                   </button>
                 )}
               </div>
