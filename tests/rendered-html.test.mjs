@@ -145,6 +145,15 @@ test("shuffles only the remaining study cards without resetting progress", async
   );
 });
 
+test("shuffles the remaining study cards with the S key", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /event\.code === "KeyS"/);
+  assert.match(source, /!event\.repeat && !switching && studyMode === "learn" && cardIndex < studyCards\.length - 1/);
+  assert.match(source, /shuffleRemainingCards\(\)/);
+  assert.match(source, /<kbd>S<\/kbd> перемешать/);
+});
+
 test("shows a live answer summary during a study session", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
