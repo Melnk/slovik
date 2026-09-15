@@ -137,6 +137,20 @@ function countDifficultCards(deck: Deck) {
   return getDifficultCards(deck).length;
 }
 
+function formatSessionCount(count: number) {
+  const lastTwoDigits = count % 100;
+  const lastDigit = count % 10;
+  const noun = lastTwoDigits >= 11 && lastTwoDigits <= 14
+    ? "подходов"
+    : lastDigit === 1
+      ? "подход"
+      : lastDigit >= 2 && lastDigit <= 4
+        ? "подхода"
+        : "подходов";
+
+  return `${count} ${noun}`;
+}
+
 function buildProgressiveHint(answer: string, revealedLetters: number) {
   let letterIndex = 0;
 
@@ -885,7 +899,9 @@ export default function StudyApp() {
                 <div className="deck-progress">
                   <span><i style={{ width: `${deck.lastScore}%` }} /></span>
                   <small>
-                    {deck.sessions ? `Последний результат ${deck.lastScore}%` : "Ещё не изучали"}
+                    {deck.sessions
+                      ? `Последний результат ${deck.lastScore}% · ${formatSessionCount(deck.sessions)}`
+                      : "Ещё не изучали"}
                     {countDifficultCards(deck) > 0 && (
                       <> · <b>{countDifficultCards(deck)} сложн.</b></>
                     )}

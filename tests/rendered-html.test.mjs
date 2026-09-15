@@ -34,6 +34,7 @@ test("server-renders the Slovik home page", async () => {
   assert.match(html, /<title>Словик — карточки для изучения слов<\/title>/i);
   assert.match(html, /Все новые слова/);
   assert.match(html, /Мои наборы/);
+  assert.match(html, /Последний результат 67% · 2 подхода/);
   assert.match(html, /Наборы сохраняются прямо в браузере/);
   assert.match(html, /Устанавливать ничего не нужно/);
   assert.match(html, /Преподавателю и ученикам/);
@@ -188,6 +189,18 @@ test("shows how many difficult words each deck contains", async () => {
   assert.match(source, /function countDifficultCards\(deck: Deck\)/);
   assert.match(source, /return getDifficultCards\(deck\)\.length/);
   assert.match(source, /countDifficultCards\(deck\).*?сложн\./s);
+});
+
+test("shows the completed study session count for each practiced deck", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /function formatSessionCount\(count: number\)/);
+  assert.match(source, /lastTwoDigits >= 11 && lastTwoDigits <= 14/);
+  assert.match(source, /Последний результат \$\{deck\.lastScore\}% · \$\{formatSessionCount\(deck\.sessions\)\}/);
+  assert.doesNotMatch(
+    source.match(/function formatSessionCount[\s\S]*?\n\}/)?.[0] ?? "",
+    /localStorage|setDecks|setSavedSession/,
+  );
 });
 
 test("starts a focused review with every difficult word in a deck", async () => {
