@@ -442,6 +442,13 @@ export default function StudyApp() {
     setRevealedHintLetters((count) => Math.min(count + 1, maximumHintLetters));
   }, [currentCard, finished, flipped, reverse, switching]);
 
+  const toggleStudyDirection = useCallback(() => {
+    if (finished || switching) return;
+    setReverse((value) => !value);
+    setFlipped(false);
+    setRevealedHintLetters(0);
+  }, [finished, switching]);
+
   useEffect(() => {
     if (view !== "study" || finished) return;
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -463,6 +470,10 @@ export default function StudyApp() {
         event.preventDefault();
         shuffleRemainingCards();
       }
+      if (event.code === "KeyD" && !event.repeat && !switching) {
+        event.preventDefault();
+        toggleStudyDirection();
+      }
       if (event.code === "KeyP" && !event.repeat && !switching && currentCard) {
         event.preventDefault();
         speak(flipped
@@ -472,7 +483,7 @@ export default function StudyApp() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [cardIndex, currentCard, finished, flipped, markAnswer, postponeCard, revealAnswerHint, reverse, shuffleRemainingCards, studyCards.length, studyMode, switching, view]);
+  }, [cardIndex, currentCard, finished, flipped, markAnswer, postponeCard, revealAnswerHint, reverse, shuffleRemainingCards, studyCards.length, studyMode, switching, toggleStudyDirection, view]);
 
   function startStudy(deck: Deck) {
     clearSavedSession();
@@ -647,7 +658,7 @@ export default function StudyApp() {
             <span>{studyMode === "review" ? "Умное повторение" : "Тренировка"}</span>
             <strong>{activeDeck.title}</strong>
           </div>
-          <button className="direction-button" type="button" onClick={() => { setReverse((value) => !value); setFlipped(false); setRevealedHintLetters(0); }} aria-label="Поменять стороны карточек" disabled={switching}>
+          <button className="direction-button" type="button" onClick={toggleStudyDirection} aria-label="Поменять стороны карточек" disabled={switching}>
             {reverse ? "RU → EN" : "EN → RU"} <span aria-hidden="true">⇄</span>
           </button>
         </header>
@@ -743,7 +754,7 @@ export default function StudyApp() {
                   <strong>Вспомнил!</strong><small>стрелка вправо</small><span>→</span>
                 </button>
               </div>
-              <p className="keyboard-tip"><kbd>Пробел</kbd> перевернуть · <kbd>H</kbd> подсказка · <kbd>R</kbd> позже · <kbd>S</kbd> перемешать · <kbd>P</kbd> озвучить · <kbd>←</kbd><kbd>→</kbd> ответить</p>
+              <p className="keyboard-tip"><kbd>Пробел</kbd> перевернуть · <kbd>H</kbd> подсказка · <kbd>R</kbd> позже · <kbd>S</kbd> перемешать · <kbd>D</kbd> направление · <kbd>P</kbd> озвучить · <kbd>←</kbd><kbd>→</kbd> ответить</p>
             </>
           ) : (
             <div className="result-card">

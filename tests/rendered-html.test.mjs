@@ -155,6 +155,20 @@ test("shuffles the remaining study cards with the S key", async () => {
   assert.match(source, /<kbd>S<\/kbd> перемешать/);
 });
 
+test("switches the study direction with the D key", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /const toggleStudyDirection = useCallback/);
+  assert.match(source, /setReverse\(\(value\) => !value\)/);
+  assert.match(source, /setFlipped\(false\)/);
+  assert.match(source, /setRevealedHintLetters\(0\)/);
+  assert.match(source, /event\.code === "KeyD"/);
+  assert.match(source, /!event\.repeat && !switching/);
+  assert.match(source, /toggleStudyDirection\(\)/);
+  assert.match(source, /onClick=\{toggleStudyDirection\}/);
+  assert.match(source, /<kbd>D<\/kbd> направление/);
+});
+
 test("shows a live answer summary during a study session", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
