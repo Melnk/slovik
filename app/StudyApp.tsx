@@ -619,7 +619,7 @@ export default function StudyApp() {
     }, 0);
   }
 
-  function speak(text: string) {
+  function speak(text: string, rate = 0.9) {
     if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
       setNotice("Озвучивание не поддерживается в этом браузере");
       return;
@@ -628,7 +628,7 @@ export default function StudyApp() {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = /[\u0400-\u04ff]/.test(text) ? "ru-RU" : "en-US";
-    utterance.rate = 0.9;
+    utterance.rate = rate;
     window.speechSynthesis.speak(utterance);
   }
 
@@ -743,6 +743,16 @@ export default function StudyApp() {
                 >
                   <span aria-hidden="true">◖))</span>
                   Озвучить эту сторону
+                </button>
+                <button
+                  className="pronunciation-button"
+                  type="button"
+                  onClick={() => speak(flipped ? cardBack : cardFront, 0.65)}
+                  disabled={switching}
+                  aria-label={`Озвучить медленно: ${flipped ? cardBack : cardFront}`}
+                >
+                  <span aria-hidden="true">◖))</span>
+                  Медленно
                 </button>
               </div>
 
