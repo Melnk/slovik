@@ -722,6 +722,16 @@ export default function StudyApp() {
                     {revealedHintLetters === 0 ? "Подсказка ответа" : <>Подсказка: <b>{progressiveHint}</b></>}
                   </button>
                 )}
+                {!flipped && revealedHintLetters > 0 && (
+                  <button
+                    className="hint-button"
+                    type="button"
+                    onClick={() => setRevealedHintLetters(0)}
+                    disabled={switching}
+                  >
+                    Скрыть подсказку
+                  </button>
+                )}
                 {!flipped && cardIndex < studyCards.length - 1 && (
                   <button
                     className="postpone-button"

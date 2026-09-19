@@ -77,6 +77,15 @@ test("reveals the hidden answer one letter at a time without showing it complete
   assert.match(source, /setFlipped\(false\);[\s\S]*?setRevealedHintLetters\(0\);/);
 });
 
+test("hides an opened hint so the same card can be recalled unaided", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /!flipped && revealedHintLetters > 0 && \(/);
+  assert.match(source, /onClick=\{\(\) => setRevealedHintLetters\(0\)\}/);
+  assert.match(source, /disabled=\{switching\}[\s\S]*?Скрыть подсказку/);
+  assert.match(source, /revealedHintLetters === 0 \? "Подсказка ответа"/);
+});
+
 test("reveals the next hint letter with the H key", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
