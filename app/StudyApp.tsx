@@ -478,7 +478,7 @@ export default function StudyApp() {
         event.preventDefault();
         speak(flipped
           ? (reverse ? currentCard.front : currentCard.back)
-          : (reverse ? currentCard.back : currentCard.front));
+          : (reverse ? currentCard.back : currentCard.front), event.shiftKey ? 0.65 : 0.9);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -774,7 +774,7 @@ export default function StudyApp() {
                   <strong>Вспомнил!</strong><small>стрелка вправо</small><span>→</span>
                 </button>
               </div>
-              <p className="keyboard-tip"><kbd>Пробел</kbd> перевернуть · <kbd>H</kbd> подсказка · <kbd>R</kbd> позже · <kbd>S</kbd> перемешать · <kbd>D</kbd> направление · <kbd>P</kbd> озвучить · <kbd>←</kbd><kbd>→</kbd> ответить</p>
+              <p className="keyboard-tip"><kbd>Пробел</kbd> перевернуть · <kbd>H</kbd> подсказка · <kbd>R</kbd> позже · <kbd>S</kbd> перемешать · <kbd>D</kbd> направление · <kbd>P</kbd> озвучить · <kbd>Shift</kbd>+<kbd>P</kbd> медленно · <kbd>←</kbd><kbd>→</kbd> ответить</p>
             </>
           ) : (
             <div className="result-card">
