@@ -35,6 +35,7 @@ type SessionSnapshot = {
 
 const STORAGE_KEY = "slovik-decks-v1";
 const SESSION_KEY = "slovik-active-session-v1";
+const QUICK_STUDY_CARDS = 10;
 const REVIEW_CARDS = 5;
 const DIFFICULT_REVIEW_CARDS = 3;
 const SAMPLE_TEXT = [
@@ -161,13 +162,11 @@ function buildProgressiveHint(answer: string, revealedLetters: number) {
   }).join("");
 }
 
-function getSessionStats(snapshot: SessionSnapshot, deck: Deck) {
-  const total = snapshot.mode === "review"
-    ? new Set(snapshot.queue).size
-    : deck.cards.length;
+function getSessionStats(snapshot: SessionSnapshot) {
+  const total = new Set(snapshot.queue).size;
   const completed = snapshot.mode === "review"
     ? Math.min(snapshot.reviewMastered.length, total)
-    : Math.min(snapshot.cardIndex, deck.cards.length);
+    : Math.min(snapshot.cardIndex, total);
   const correct = snapshot.answers.filter(Boolean).length;
 
   return {
@@ -222,7 +221,7 @@ export default function StudyApp() {
     ? decks.find((deck) => deck.id === savedSession.deckId) ?? null
     : null;
   const savedStats = savedSession && savedDeck
-    ? getSessionStats(savedSession, savedDeck)
+    ? getSessionStats(savedSession)
     : null;
 
   useEffect(() => {
@@ -485,11 +484,10 @@ export default function StudyApp() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [cardIndex, currentCard, finished, flipped, markAnswer, postponeCard, revealAnswerHint, reverse, shuffleRemainingCards, studyCards.length, studyMode, switching, toggleStudyDirection, view]);
 
-  function startStudy(deck: Deck) {
+  function prepareStudy(deck: Deck) {
     clearSavedSession();
     setStudyMode("learn");
     setActiveDeckId(deck.id);
-    setStudyCards(shuffle(deck.cards));
     setCardIndex(0);
     setFlipped(false);
     setAnswers([]);
@@ -499,6 +497,16 @@ export default function StudyApp() {
     setRevealedHintLetters(0);
     setView("study");
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function startStudy(deck: Deck) {
+    prepareStudy(deck);
+    setStudyCards(shuffle(deck.cards));
+  }
+
+  function startQuickStudy(deck: Deck) {
+    prepareStudy(deck);
+    setStudyCards(shuffle(deck.cards).slice(0, QUICK_STUDY_CARDS));
   }
 
   function startReview(deck: Deck, focusedCards?: WordCard[]) {
@@ -937,6 +945,15 @@ export default function StudyApp() {
                       <> · <b>{countDifficultCards(deck)} сложн.</b></>
                     )}
                   </small>
+                  {deck.cards.length > QUICK_STUDY_CARDS && (
+                    <button
+                      className="quick-study-link"
+                      type="button"
+                      onClick={() => startQuickStudy(deck)}
+                    >
+                      Быстрый подход: {QUICK_STUDY_CARDS} слов →
+                    </button>
+                  )}
                 </div>
                 <div className={`deck-actions ${countDifficultCards(deck) > 0 ? "has-difficult" : ""}`}>
                   <button className="review-button" type="button" onClick={() => startReview(deck)}>
