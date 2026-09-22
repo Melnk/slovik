@@ -509,6 +509,12 @@ export default function StudyApp() {
     setStudyCards(shuffle(deck.cards).slice(0, QUICK_STUDY_CARDS));
   }
 
+  function startOppositeStudy(deck: Deck, cards: WordCard[]) {
+    prepareStudy(deck);
+    setReverse((value) => !value);
+    setStudyCards(shuffle(cards));
+  }
+
   function startReview(deck: Deck, focusedCards?: WordCard[]) {
     clearSavedSession();
     setStudyMode("review");
@@ -811,6 +817,11 @@ export default function StudyApp() {
                 {studyMode === "learn" && (
                   <button className="secondary-button" type="button" onClick={() => startStudy(activeDeck)}>
                     Пройти весь набор снова
+                  </button>
+                )}
+                {studyMode === "learn" && (
+                  <button className="secondary-button" type="button" onClick={() => startOppositeStudy(activeDeck, studyCards)}>
+                    Те же слова в обратную сторону
                   </button>
                 )}
                 <button className="primary-button compact" type="button" onClick={() => setView("home")}>К моим наборам →</button>

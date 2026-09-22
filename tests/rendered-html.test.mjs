@@ -141,6 +141,15 @@ test("restarts the full deck directly from a finished study session", async () =
   assert.match(source, /Пройти весь набор снова/);
 });
 
+test("repeats the same study cards in the opposite direction from the result", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /function startOppositeStudy\(deck: Deck, cards: WordCard\[\]\)/);
+  assert.match(source, /prepareStudy\(deck\);[\s\S]*?setReverse\(\(value\) => !value\);[\s\S]*?setStudyCards\(shuffle\(cards\)\)/);
+  assert.match(source, /studyMode === "learn" && \([\s\S]*?startOppositeStudy\(activeDeck, studyCards\)/);
+  assert.match(source, /Те же слова в обратную сторону/);
+});
+
 test("shuffles only the remaining study cards without resetting progress", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
