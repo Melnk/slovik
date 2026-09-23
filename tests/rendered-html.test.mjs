@@ -134,10 +134,13 @@ test("starts a focused review with only the mistakes from the finished study ses
   assert.match(source, /Повторить ошибки \(\{missedCards\.length\}\)/);
 });
 
-test("restarts the full deck directly from a finished study session", async () => {
+test("repeats the same study cards directly from a finished session", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
-  assert.match(source, /studyMode === "learn" && \([\s\S]*?onClick=\{\(\) => startStudy\(activeDeck\)\}/);
+  assert.match(source, /function repeatStudyCards\(deck: Deck, cards: WordCard\[\]\)/);
+  assert.match(source, /prepareStudy\(deck\);[\s\S]*?setStudyCards\(shuffle\(cards\)\)/);
+  assert.match(source, /studyMode === "learn" && \([\s\S]*?repeatStudyCards\(activeDeck, studyCards\)/);
+  assert.match(source, /studyCards\.length < activeDeck\.cards\.length \? "Повторить эти слова"/);
   assert.match(source, /Пройти весь набор снова/);
 });
 
