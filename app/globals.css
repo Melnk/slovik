@@ -292,6 +292,13 @@ kbd { display: inline-block; min-width: 22px; margin: 0 3px; padding: 3px 6px; b
 .score-ring::after { content: ""; position: absolute; inset: 10px; border-radius: 50%; background: var(--paper); }
 .score-ring span { position: relative; z-index: 1; font-family: Georgia, serif; font-size: 28px; }
 .score-caption { display: block; margin: -23px 0 27px; color: #98a19c; font-size: 9px; letter-spacing: .8px; text-transform: uppercase; }
+.missed-word-list { width: min(100%, 520px); margin: -8px auto 27px; border: 1px solid var(--line); border-radius: 15px; background: #fffaf6; text-align: left; }
+.missed-word-list summary { padding: 14px 17px; color: var(--ink); font-size: 11px; font-weight: 800; cursor: pointer; }
+.missed-word-list ul { margin: 0; padding: 0 17px 12px; list-style: none; }
+.missed-word-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 10px; align-items: baseline; padding: 9px 0; border-top: 1px solid #eee3da; font-size: 12px; }
+.missed-word-list li span, .missed-word-list li strong { overflow-wrap: anywhere; }
+.missed-word-list li strong { color: var(--green-deep); font-weight: 700; text-align: right; }
+.missed-word-list li i { color: #b0a59c; font-style: normal; }
 .result-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
 
 @media (max-width: 900px) {

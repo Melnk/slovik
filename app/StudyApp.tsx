@@ -809,6 +809,20 @@ export default function StudyApp() {
                 <span>{score}%</span>
               </div>
               {studyMode === "review" && <small className="score-caption">точность ответов</small>}
+              {studyMode === "learn" && missedCards.length > 0 && (
+                <details className="missed-word-list">
+                  <summary>Посмотреть ошибки этого подхода</summary>
+                  <ul>
+                    {missedCards.map((card) => (
+                      <li key={card.id}>
+                        <span>{card.front}</span>
+                        <i aria-hidden="true">—</i>
+                        <strong>{card.back}</strong>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
               <div className="result-actions">
                 {studyMode === "learn" && missedCards.length > 0 ? (
                   <button className="secondary-button" type="button" onClick={() => startReview(activeDeck, missedCards)}>

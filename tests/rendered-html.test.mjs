@@ -134,6 +134,16 @@ test("starts a focused review with only the mistakes from the finished study ses
   assert.match(source, /Повторить ошибки \(\{missedCards\.length\}\)/);
 });
 
+test("shows the missed word pairs on the finished study screen", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /studyMode === "learn" && missedCards\.length > 0/);
+  assert.match(source, /<details className="missed-word-list">/);
+  assert.match(source, /Посмотреть ошибки этого подхода/);
+  assert.match(source, /missedCards\.map\(\(card\) =>/);
+  assert.match(source, /<span>\{card\.front\}<\/span>[\s\S]*?<strong>\{card\.back\}<\/strong>/);
+});
+
 test("repeats the same study cards directly from a finished session", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
