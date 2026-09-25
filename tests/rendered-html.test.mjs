@@ -144,6 +144,16 @@ test("shows the missed word pairs on the finished study screen", async () => {
   assert.match(source, /<span>\{card\.front\}<\/span>[\s\S]*?<strong>\{card\.back\}<\/strong>/);
 });
 
+test("copies only the missed word pairs from the finished study screen", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /async function copyCards\(cards: WordCard\[\], successMessage: string\)/);
+  assert.match(source, /cards[\s\S]*?\.map\(\(card\) => `\$\{card\.front\} — \$\{card\.back\}`\)/);
+  assert.match(source, /navigator\.clipboard\.writeText\(wordList\)/);
+  assert.match(source, /copyCards\(missedCards, `Скопировано ошибок: \$\{missedCards\.length\}`\)/);
+  assert.match(source, /Скопировать ошибки/);
+});
+
 test("repeats the same study cards directly from a finished session", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
@@ -271,7 +281,7 @@ test("copies a deck without changing its saved data", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
   assert.match(source, /function copyDeck\(deck: Deck\)/);
-  assert.match(source, /\.map\(\(card\) => `\$\{card\.front\} — \$\{card\.back\}`\)/);
+  assert.match(source, /copyCards\(deck\.cards, `Скопировано карточек: \$\{deck\.cards\.length\}`\)/);
   assert.match(source, /navigator\.clipboard\.writeText\(wordList\)/);
   assert.match(source, /window\.prompt\("Скопируй список слов", wordList\)/);
   assert.match(source, /onClick=\{\(\) => copyDeck\(deck\)\}/);

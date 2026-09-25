@@ -609,17 +609,21 @@ export default function StudyApp() {
     setNotice("Название набора изменено");
   }
 
-  async function copyDeck(deck: Deck) {
-    const wordList = deck.cards
+  async function copyCards(cards: WordCard[], successMessage: string) {
+    const wordList = cards
       .map((card) => `${card.front} — ${card.back}`)
       .join("\n");
 
     try {
       await window.navigator.clipboard.writeText(wordList);
-      setNotice(`Скопировано карточек: ${deck.cards.length}`);
+      setNotice(successMessage);
     } catch {
       window.prompt("Скопируй список слов", wordList);
     }
+  }
+
+  function copyDeck(deck: Deck) {
+    return copyCards(deck.cards, `Скопировано карточек: ${deck.cards.length}`);
   }
 
   function deleteDeck(deckId: string) {
@@ -821,6 +825,13 @@ export default function StudyApp() {
                       </li>
                     ))}
                   </ul>
+                  <button
+                    className="copy-missed-button"
+                    type="button"
+                    onClick={() => copyCards(missedCards, `Скопировано ошибок: ${missedCards.length}`)}
+                  >
+                    ⧉ Скопировать ошибки
+                  </button>
                 </details>
               )}
               <div className="result-actions">

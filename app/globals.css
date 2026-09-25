@@ -299,6 +299,8 @@ kbd { display: inline-block; min-width: 22px; margin: 0 3px; padding: 3px 6px; b
 .missed-word-list li span, .missed-word-list li strong { overflow-wrap: anywhere; }
 .missed-word-list li strong { color: var(--green-deep); font-weight: 700; text-align: right; }
 .missed-word-list li i { color: #b0a59c; font-style: normal; }
+.copy-missed-button { display: block; width: calc(100% - 34px); margin: 0 17px 15px; padding: 10px 12px; border: 1px solid #ded8d0; border-radius: 10px; background: var(--paper); color: var(--green-deep); font-size: 11px; font-weight: 800; cursor: pointer; }
+.copy-missed-button:hover { border-color: #a9c2af; }
 .result-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
 
 @media (max-width: 900px) {
