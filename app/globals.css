@@ -267,6 +267,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .pronunciation-button:hover:not(:disabled), .hint-button:hover:not(:disabled), .postpone-button:hover:not(:disabled) { transform: translateY(-1px); border-color: #a9c2af; background: var(--paper); }
 .pronunciation-button span, .hint-button span, .postpone-button span { color: var(--orange); font-size: 13px; }
 .pronunciation-button span { letter-spacing: -2px; }
+.pronunciation-button[aria-pressed="true"] { border-color: #8fb29a; background: #e6f0e7; box-shadow: inset 0 0 0 1px rgba(63, 104, 80, .08); }
 .hint-button b { color: var(--orange); }
 .pronunciation-button:disabled, .hint-button:disabled, .postpone-button:disabled { opacity: .65; cursor: default; }
 

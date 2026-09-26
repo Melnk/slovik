@@ -104,6 +104,17 @@ test("pronounces the visible card side with the P key", async () => {
   assert.match(source, /<kbd>P<\/kbd> озвучить/);
 });
 
+test("automatically pronounces each visible card side when enabled", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /const \[autoPronounce, setAutoPronounce\] = useState\(false\)/);
+  assert.match(source, /if \(!autoPronounce \|\| view !== "study" \|\| finished \|\| switching \|\| !currentCard\) return/);
+  assert.match(source, /const visibleText = flipped[\s\S]*?speak\(visibleText\)/);
+  assert.match(source, /aria-pressed=\{autoPronounce\}/);
+  assert.match(source, /event\.code === "KeyA"/);
+  assert.match(source, /<kbd>A<\/kbd> автоозвучивание/);
+});
+
 test("postpones an unrevealed card without recording an answer", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 

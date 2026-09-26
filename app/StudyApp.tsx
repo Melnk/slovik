@@ -197,6 +197,7 @@ export default function StudyApp() {
   const [switching, setSwitching] = useState(false);
   const [finished, setFinished] = useState(false);
   const [revealedHintLetters, setRevealedHintLetters] = useState(0);
+  const [autoPronounce, setAutoPronounce] = useState(false);
   const [savedSession, setSavedSession] = useState<SessionSnapshot | null>(null);
   const [notice, setNotice] = useState("");
   const titleRef = useRef<HTMLInputElement>(null);
@@ -292,11 +293,46 @@ export default function StudyApp() {
     return () => window.clearTimeout(timeout);
   }, [notice]);
 
+  const speak = useCallback((text: string, rate = 0.9) => {
+    if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+      setNotice("Озвучивание не поддерживается в этом браузере");
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = /[\u0400-\u04ff]/.test(text) ? "ru-RU" : "en-US";
+    utterance.rate = rate;
+    window.speechSynthesis.speak(utterance);
+  }, []);
+
+  const toggleAutoPronounce = useCallback(() => {
+    if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+      setNotice("Озвучивание не поддерживается в этом браузере");
+      return;
+    }
+
+    setAutoPronounce((enabled) => {
+      if (enabled) window.speechSynthesis.cancel();
+      return !enabled;
+    });
+  }, []);
+
   useEffect(() => {
     return () => {
       if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     };
   }, [cardIndex, view]);
+
+  useEffect(() => {
+    if (!autoPronounce || view !== "study" || finished || switching || !currentCard) return;
+
+    const visibleText = flipped
+      ? (reverse ? currentCard.front : currentCard.back)
+      : (reverse ? currentCard.back : currentCard.front);
+    const timeout = window.setTimeout(() => speak(visibleText), 120);
+    return () => window.clearTimeout(timeout);
+  }, [autoPronounce, currentCard, finished, flipped, reverse, speak, switching, view]);
 
   useEffect(() => {
     return () => {
@@ -479,10 +515,14 @@ export default function StudyApp() {
           ? (reverse ? currentCard.front : currentCard.back)
           : (reverse ? currentCard.back : currentCard.front), event.shiftKey ? 0.65 : 0.9);
       }
+      if (event.code === "KeyA" && !event.repeat && !switching) {
+        event.preventDefault();
+        toggleAutoPronounce();
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [cardIndex, currentCard, finished, flipped, markAnswer, postponeCard, revealAnswerHint, reverse, shuffleRemainingCards, studyCards.length, studyMode, switching, toggleStudyDirection, view]);
+  }, [cardIndex, currentCard, finished, flipped, markAnswer, postponeCard, revealAnswerHint, reverse, shuffleRemainingCards, speak, studyCards.length, studyMode, switching, toggleAutoPronounce, toggleStudyDirection, view]);
 
   function prepareStudy(deck: Deck) {
     clearSavedSession();
@@ -642,19 +682,6 @@ export default function StudyApp() {
     }, 0);
   }
 
-  function speak(text: string, rate = 0.9) {
-    if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
-      setNotice("Озвучивание не поддерживается в этом браузере");
-      return;
-    }
-
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = /[\u0400-\u04ff]/.test(text) ? "ru-RU" : "en-US";
-    utterance.rate = rate;
-    window.speechSynthesis.speak(utterance);
-  }
-
   if (view === "study" && activeDeck && currentCard) {
     const score = Math.round((knownCount / Math.max(answers.length, 1)) * 100);
     const cardFront = reverse ? currentCard.back : currentCard.front;
@@ -787,6 +814,17 @@ export default function StudyApp() {
                   <span aria-hidden="true">◖))</span>
                   Медленно
                 </button>
+                <button
+                  className="pronunciation-button"
+                  type="button"
+                  onClick={toggleAutoPronounce}
+                  disabled={switching}
+                  aria-pressed={autoPronounce}
+                  aria-label={autoPronounce ? "Выключить автоозвучивание карточек" : "Включить автоозвучивание карточек"}
+                >
+                  <span aria-hidden="true">↻</span>
+                  {autoPronounce ? "Автоозвучивание включено" : "Автоозвучивание"}
+                </button>
               </div>
 
               <div className={`answer-actions ${flipped && !switching ? "is-visible" : ""}`}>
@@ -797,7 +835,7 @@ export default function StudyApp() {
                   <strong>Вспомнил!</strong><small>стрелка вправо</small><span>→</span>
                 </button>
               </div>
-              <p className="keyboard-tip"><kbd>Пробел</kbd> перевернуть · <kbd>H</kbd> подсказка · <kbd>R</kbd> позже · <kbd>S</kbd> перемешать · <kbd>D</kbd> направление · <kbd>P</kbd> озвучить · <kbd>Shift</kbd>+<kbd>P</kbd> медленно · <kbd>←</kbd><kbd>→</kbd> ответить</p>
+              <p className="keyboard-tip"><kbd>Пробел</kbd> перевернуть · <kbd>H</kbd> подсказка · <kbd>R</kbd> позже · <kbd>S</kbd> перемешать · <kbd>D</kbd> направление · <kbd>P</kbd> озвучить · <kbd>Shift</kbd>+<kbd>P</kbd> медленно · <kbd>A</kbd> автоозвучивание · <kbd>←</kbd><kbd>→</kbd> ответить</p>
             </>
           ) : (
             <div className="result-card">
