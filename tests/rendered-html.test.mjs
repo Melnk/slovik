@@ -228,7 +228,17 @@ test("shows a live answer summary during a study session", async () => {
   assert.match(source, /answers\.length > 0 && \(/);
   assert.match(source, /Вспомнил: <strong>\{knownCount\}<\/strong>/);
   assert.match(source, /Повторить: <strong>\{forgottenCount\}<\/strong>/);
-  assert.match(source, /aria-label=\{`Текущий результат: вспомнил \$\{knownCount\}, нужно повторить \$\{forgottenCount\}`\}/);
+  assert.match(source, /aria-label=\{`Текущий результат: вспомнил \$\{knownCount\}, нужно повторить \$\{forgottenCount\}, серия \$\{currentStreak\}`\}/);
+});
+
+test("shows the current streak of remembered cards during a study session", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /function countCurrentStreak\(answers: boolean\[\]\)/);
+  assert.match(source, /for \(let index = answers\.length - 1; index >= 0 && answers\[index\]; index -= 1\)/);
+  assert.match(source, /const currentStreak = countCurrentStreak\(answers\)/);
+  assert.match(source, /Серия: <strong>\{currentStreak\}<\/strong>/);
+  assert.match(source, /серия \$\{currentStreak\}/);
 });
 
 test("does not auto-reveal the next review card", async () => {

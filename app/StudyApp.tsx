@@ -152,6 +152,16 @@ function formatSessionCount(count: number) {
   return `${count} ${noun}`;
 }
 
+function countCurrentStreak(answers: boolean[]) {
+  let streak = 0;
+
+  for (let index = answers.length - 1; index >= 0 && answers[index]; index -= 1) {
+    streak += 1;
+  }
+
+  return streak;
+}
+
 function buildProgressiveHint(answer: string, revealedLetters: number) {
   let letterIndex = 0;
 
@@ -218,6 +228,7 @@ export default function StudyApp() {
   const currentCard = studyCards[cardIndex];
   const knownCount = answers.filter(Boolean).length;
   const forgottenCount = answers.length - knownCount;
+  const currentStreak = countCurrentStreak(answers);
   const savedDeck = savedSession
     ? decks.find((deck) => deck.id === savedSession.deckId) ?? null
     : null;
@@ -736,9 +747,10 @@ export default function StudyApp() {
               </div>
 
               {answers.length > 0 && (
-                <div className="live-answer-stats" role="status" aria-label={`Текущий результат: вспомнил ${knownCount}, нужно повторить ${forgottenCount}`}>
+                <div className="live-answer-stats" role="status" aria-label={`Текущий результат: вспомнил ${knownCount}, нужно повторить ${forgottenCount}, серия ${currentStreak}`}>
                   <span className="is-known"><i aria-hidden="true">✓</i> Вспомнил: <strong>{knownCount}</strong></span>
                   <span className="is-forgotten"><i aria-hidden="true">↻</i> Повторить: <strong>{forgottenCount}</strong></span>
+                  <span className="is-streak"><i aria-hidden="true">✦</i> Серия: <strong>{currentStreak}</strong></span>
                 </div>
               )}
 
