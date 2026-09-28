@@ -241,6 +241,16 @@ test("shows the current streak of remembered cards during a study session", asyn
   assert.match(source, /серия \$\{currentStreak\}/);
 });
 
+test("shows the longest remembered-card streak on the study result", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /function countLongestStreak\(answers: boolean\[\]\)/);
+  assert.match(source, /current = answer \? current \+ 1 : 0/);
+  assert.match(source, /longest = Math\.max\(longest, current\)/);
+  assert.match(source, /const longestStreak = countLongestStreak\(answers\)/);
+  assert.match(source, /лучшая серия: \$\{longestStreak\}/);
+});
+
 test("does not auto-reveal the next review card", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 

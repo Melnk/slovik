@@ -162,6 +162,18 @@ function countCurrentStreak(answers: boolean[]) {
   return streak;
 }
 
+function countLongestStreak(answers: boolean[]) {
+  let longest = 0;
+  let current = 0;
+
+  answers.forEach((answer) => {
+    current = answer ? current + 1 : 0;
+    longest = Math.max(longest, current);
+  });
+
+  return longest;
+}
+
 function buildProgressiveHint(answer: string, revealedLetters: number) {
   let letterIndex = 0;
 
@@ -229,6 +241,7 @@ export default function StudyApp() {
   const knownCount = answers.filter(Boolean).length;
   const forgottenCount = answers.length - knownCount;
   const currentStreak = countCurrentStreak(answers);
+  const longestStreak = countLongestStreak(answers);
   const savedDeck = savedSession
     ? decks.find((deck) => deck.id === savedSession.deckId) ?? null
     : null;
@@ -862,7 +875,9 @@ export default function StudyApp() {
               <div className="score-ring" style={{ "--score": `${score * 3.6}deg` } as React.CSSProperties}>
                 <span>{score}%</span>
               </div>
-              {studyMode === "review" && <small className="score-caption">точность ответов</small>}
+              <small className="score-caption">
+                {studyMode === "review" ? "точность ответов" : `лучшая серия: ${longestStreak}`}
+              </small>
               {studyMode === "learn" && missedCards.length > 0 && (
                 <details className="missed-word-list">
                   <summary>Посмотреть ошибки этого подхода</summary>
