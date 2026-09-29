@@ -104,6 +104,18 @@ test("pronounces the visible card side with the P key", async () => {
   assert.match(source, /<kbd>P<\/kbd> озвучить/);
 });
 
+test("offers the hidden answer as an audio-only hint", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /!flipped && \([\s\S]*?onClick=\{\(\) => speak\(cardBack\)\}/);
+  assert.match(source, /aria-label="Озвучить скрытый ответ"/);
+  assert.match(source, /Послушать ответ/);
+  assert.match(source, /event\.code === "KeyL"/);
+  assert.match(source, /!event\.repeat && !flipped && !switching && currentCard/);
+  assert.match(source, /speak\(reverse \? currentCard\.front : currentCard\.back\)/);
+  assert.match(source, /<kbd>L<\/kbd> послушать ответ/);
+});
+
 test("automatically pronounces each visible card side when enabled", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 

@@ -539,6 +539,10 @@ export default function StudyApp() {
           ? (reverse ? currentCard.front : currentCard.back)
           : (reverse ? currentCard.back : currentCard.front), event.shiftKey ? 0.65 : 0.9);
       }
+      if (event.code === "KeyL" && !event.repeat && !flipped && !switching && currentCard) {
+        event.preventDefault();
+        speak(reverse ? currentCard.front : currentCard.back);
+      }
       if (event.code === "KeyA" && !event.repeat && !switching) {
         event.preventDefault();
         toggleAutoPronounce();
@@ -819,6 +823,18 @@ export default function StudyApp() {
                     Вернуться позже
                   </button>
                 )}
+                {!flipped && (
+                  <button
+                    className="pronunciation-button"
+                    type="button"
+                    onClick={() => speak(cardBack)}
+                    disabled={switching}
+                    aria-label="Озвучить скрытый ответ"
+                  >
+                    <span aria-hidden="true">◖))</span>
+                    Послушать ответ
+                  </button>
+                )}
                 <button
                   className="pronunciation-button"
                   type="button"
@@ -860,7 +876,7 @@ export default function StudyApp() {
                   <strong>Вспомнил!</strong><small>стрелка вправо</small><span>→</span>
                 </button>
               </div>
-              <p className="keyboard-tip"><kbd>Пробел</kbd> перевернуть · <kbd>H</kbd> подсказка · <kbd>R</kbd> позже · <kbd>S</kbd> перемешать · <kbd>D</kbd> направление · <kbd>P</kbd> озвучить · <kbd>Shift</kbd>+<kbd>P</kbd> медленно · <kbd>A</kbd> автоозвучивание · <kbd>←</kbd><kbd>→</kbd> ответить</p>
+              <p className="keyboard-tip"><kbd>Пробел</kbd> перевернуть · <kbd>H</kbd> подсказка · <kbd>L</kbd> послушать ответ · <kbd>R</kbd> позже · <kbd>S</kbd> перемешать · <kbd>D</kbd> направление · <kbd>P</kbd> озвучить · <kbd>Shift</kbd>+<kbd>P</kbd> медленно · <kbd>A</kbd> автоозвучивание · <kbd>←</kbd><kbd>→</kbd> ответить</p>
             </>
           ) : (
             <div className="result-card">
