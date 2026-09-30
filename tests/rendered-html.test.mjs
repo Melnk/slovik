@@ -95,6 +95,16 @@ test("reveals the next hint letter with the H key", async () => {
   assert.match(source, /<kbd>H<\/kbd> подсказка/);
 });
 
+test("hides an opened hint with Shift+H", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /event\.code === "KeyH" && event\.shiftKey/);
+  assert.match(source, /!event\.repeat && !flipped && !switching && revealedHintLetters > 0/);
+  assert.match(source, /setRevealedHintLetters\(0\)/);
+  assert.match(source, /else if \(event\.code === "KeyH"/);
+  assert.match(source, /<kbd>Shift<\/kbd>\+<kbd>H<\/kbd> скрыть/);
+});
+
 test("pronounces the visible card side with the P key", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 

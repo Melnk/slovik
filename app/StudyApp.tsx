@@ -517,7 +517,10 @@ export default function StudyApp() {
       }
       if (event.key === "ArrowLeft" && flipped && !switching) markAnswer(false);
       if (event.key === "ArrowRight" && flipped && !switching) markAnswer(true);
-      if (event.code === "KeyH" && !event.repeat && !flipped && !switching) {
+      if (event.code === "KeyH" && event.shiftKey && !event.repeat && !flipped && !switching && revealedHintLetters > 0) {
+        event.preventDefault();
+        setRevealedHintLetters(0);
+      } else if (event.code === "KeyH" && !event.repeat && !flipped && !switching) {
         event.preventDefault();
         revealAnswerHint();
       }
@@ -550,7 +553,7 @@ export default function StudyApp() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [cardIndex, currentCard, finished, flipped, markAnswer, postponeCard, revealAnswerHint, reverse, shuffleRemainingCards, speak, studyCards.length, studyMode, switching, toggleAutoPronounce, toggleStudyDirection, view]);
+  }, [cardIndex, currentCard, finished, flipped, markAnswer, postponeCard, revealAnswerHint, revealedHintLetters, reverse, shuffleRemainingCards, speak, studyCards.length, studyMode, switching, toggleAutoPronounce, toggleStudyDirection, view]);
 
   function prepareStudy(deck: Deck) {
     clearSavedSession();
@@ -876,7 +879,7 @@ export default function StudyApp() {
                   <strong>Вспомнил!</strong><small>стрелка вправо</small><span>→</span>
                 </button>
               </div>
-              <p className="keyboard-tip"><kbd>Пробел</kbd> перевернуть · <kbd>H</kbd> подсказка · <kbd>L</kbd> послушать ответ · <kbd>R</kbd> позже · <kbd>S</kbd> перемешать · <kbd>D</kbd> направление · <kbd>P</kbd> озвучить · <kbd>Shift</kbd>+<kbd>P</kbd> медленно · <kbd>A</kbd> автоозвучивание · <kbd>←</kbd><kbd>→</kbd> ответить</p>
+              <p className="keyboard-tip"><kbd>Пробел</kbd> перевернуть · <kbd>H</kbd> подсказка · <kbd>Shift</kbd>+<kbd>H</kbd> скрыть · <kbd>L</kbd> послушать ответ · <kbd>R</kbd> позже · <kbd>S</kbd> перемешать · <kbd>D</kbd> направление · <kbd>P</kbd> озвучить · <kbd>Shift</kbd>+<kbd>P</kbd> медленно · <kbd>A</kbd> автоозвучивание · <kbd>←</kbd><kbd>→</kbd> ответить</p>
             </>
           ) : (
             <div className="result-card">
