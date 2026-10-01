@@ -122,8 +122,19 @@ test("offers the hidden answer as an audio-only hint", async () => {
   assert.match(source, /Послушать ответ/);
   assert.match(source, /event\.code === "KeyL"/);
   assert.match(source, /!event\.repeat && !flipped && !switching && currentCard/);
-  assert.match(source, /speak\(reverse \? currentCard\.front : currentCard\.back\)/);
+  assert.match(source, /speak\(reverse \? currentCard\.front : currentCard\.back, event\.shiftKey \? 0\.65 : 0\.9\)/);
   assert.match(source, /<kbd>L<\/kbd> послушать ответ/);
+});
+
+test("offers a slow audio hint without revealing the hidden answer", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /onClick=\{\(\) => speak\(cardBack, 0\.65\)\}/);
+  assert.match(source, /aria-label="Озвучить скрытый ответ медленно"/);
+  assert.match(source, /Ответ медленно/);
+  assert.match(source, /event\.code === "KeyL"/);
+  assert.match(source, /speak\(reverse \? currentCard\.front : currentCard\.back, event\.shiftKey \? 0\.65 : 0\.9\)/);
+  assert.match(source, /<kbd>Shift<\/kbd>\+<kbd>L<\/kbd> ответ медленно/);
 });
 
 test("automatically pronounces each visible card side when enabled", async () => {
