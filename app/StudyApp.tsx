@@ -240,6 +240,7 @@ export default function StudyApp() {
   const currentCard = studyCards[cardIndex];
   const knownCount = answers.filter(Boolean).length;
   const forgottenCount = answers.length - knownCount;
+  const liveAccuracy = Math.round((knownCount / Math.max(answers.length, 1)) * 100);
   const currentStreak = countCurrentStreak(answers);
   const longestStreak = countLongestStreak(answers);
   const savedDeck = savedSession
@@ -767,9 +768,10 @@ export default function StudyApp() {
               </div>
 
               {answers.length > 0 && (
-                <div className="live-answer-stats" role="status" aria-label={`Текущий результат: вспомнил ${knownCount}, нужно повторить ${forgottenCount}, серия ${currentStreak}`}>
+                <div className="live-answer-stats" role="status" aria-label={`Текущий результат: вспомнил ${knownCount}, нужно повторить ${forgottenCount}, точность ${liveAccuracy}%, серия ${currentStreak}`}>
                   <span className="is-known"><i aria-hidden="true">✓</i> Вспомнил: <strong>{knownCount}</strong></span>
                   <span className="is-forgotten"><i aria-hidden="true">↻</i> Повторить: <strong>{forgottenCount}</strong></span>
+                  <span className="is-accuracy"><i aria-hidden="true">%</i> Точность: <strong>{liveAccuracy}%</strong></span>
                   <span className="is-streak"><i aria-hidden="true">✦</i> Серия: <strong>{currentStreak}</strong></span>
                 </div>
               )}

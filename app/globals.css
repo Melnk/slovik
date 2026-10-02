@@ -244,6 +244,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .live-answer-stats span { display: flex; align-items: center; gap: 5px; }
 .live-answer-stats i { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: #e2eee5; color: var(--green-deep); font-size: 10px; font-style: normal; }
 .live-answer-stats .is-forgotten i { background: #ffebe3; color: #bd654b; }
+.live-answer-stats .is-accuracy i { background: #e9e4f2; color: #765f93; }
 .live-answer-stats .is-streak i { background: #fff3cf; color: #a86d12; }
 .live-answer-stats strong { color: var(--ink); }
 

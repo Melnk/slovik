@@ -261,7 +261,15 @@ test("shows a live answer summary during a study session", async () => {
   assert.match(source, /answers\.length > 0 && \(/);
   assert.match(source, /Вспомнил: <strong>\{knownCount\}<\/strong>/);
   assert.match(source, /Повторить: <strong>\{forgottenCount\}<\/strong>/);
-  assert.match(source, /aria-label=\{`Текущий результат: вспомнил \$\{knownCount\}, нужно повторить \$\{forgottenCount\}, серия \$\{currentStreak\}`\}/);
+  assert.match(source, /aria-label=\{`Текущий результат: вспомнил \$\{knownCount\}, нужно повторить \$\{forgottenCount\}, точность \$\{liveAccuracy\}%, серия \$\{currentStreak\}`\}/);
+});
+
+test("shows live answer accuracy during a study session", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /const liveAccuracy = Math\.round\(\(knownCount \/ Math\.max\(answers\.length, 1\)\) \* 100\)/);
+  assert.match(source, /Точность: <strong>\{liveAccuracy\}%<\/strong>/);
+  assert.match(source, /точность \$\{liveAccuracy\}%, серия \$\{currentStreak\}/);
 });
 
 test("shows the current streak of remembered cards during a study session", async () => {
