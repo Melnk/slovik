@@ -299,9 +299,13 @@ kbd { display: inline-block; min-width: 22px; margin: 0 3px; padding: 3px 6px; b
 .missed-word-list summary { padding: 14px 17px; color: var(--ink); font-size: 11px; font-weight: 800; cursor: pointer; }
 .missed-word-list ul { margin: 0; padding: 0 17px 12px; list-style: none; }
 .missed-word-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 10px; align-items: baseline; padding: 9px 0; border-top: 1px solid #eee3da; font-size: 12px; }
-.missed-word-list li span, .missed-word-list li strong { overflow-wrap: anywhere; }
-.missed-word-list li strong { color: var(--green-deep); font-weight: 700; text-align: right; }
-.missed-word-list li i { color: #b0a59c; font-style: normal; }
+.missed-word-list li > i { color: #b0a59c; font-style: normal; }
+.missed-word-speech { display: flex; align-items: baseline; gap: 6px; min-width: 0; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.missed-word-speech span, .missed-word-speech strong { min-width: 0; overflow-wrap: anywhere; }
+.missed-word-speech strong { color: var(--green-deep); font-weight: 700; }
+.missed-word-speech i { flex: 0 0 auto; color: #9aaba0; font-size: 9px; font-style: normal; opacity: .75; }
+.missed-word-speech:hover i { color: var(--orange); opacity: 1; }
+.missed-word-speech.is-translation { justify-content: flex-end; text-align: right; }
 .copy-missed-button { display: block; width: calc(100% - 34px); margin: 0 17px 15px; padding: 10px 12px; border: 1px solid #ded8d0; border-radius: 10px; background: var(--paper); color: var(--green-deep); font-size: 11px; font-weight: 800; cursor: pointer; }
 .copy-missed-button:hover { border-color: #a9c2af; }
 .result-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }

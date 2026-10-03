@@ -188,6 +188,15 @@ test("shows the missed word pairs on the finished study screen", async () => {
   assert.match(source, /<span>\{card\.front\}<\/span>[\s\S]*?<strong>\{card\.back\}<\/strong>/);
 });
 
+test("pronounces either side of a missed word pair from the study result", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /className="missed-word-speech"[\s\S]*?onClick=\{\(\) => speak\(card\.front\)\}/);
+  assert.match(source, /aria-label=\{`Озвучить: \$\{card\.front\}`\}/);
+  assert.match(source, /className="missed-word-speech is-translation"[\s\S]*?onClick=\{\(\) => speak\(card\.back\)\}/);
+  assert.match(source, /aria-label=\{`Озвучить: \$\{card\.back\}`\}/);
+});
+
 test("copies only the missed word pairs from the finished study screen", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 

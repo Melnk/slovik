@@ -917,9 +917,25 @@ export default function StudyApp() {
                   <ul>
                     {missedCards.map((card) => (
                       <li key={card.id}>
-                        <span>{card.front}</span>
+                        <button
+                          className="missed-word-speech"
+                          type="button"
+                          onClick={() => speak(card.front)}
+                          aria-label={`Озвучить: ${card.front}`}
+                        >
+                          <span>{card.front}</span>
+                          <i aria-hidden="true">◖))</i>
+                        </button>
                         <i aria-hidden="true">—</i>
-                        <strong>{card.back}</strong>
+                        <button
+                          className="missed-word-speech is-translation"
+                          type="button"
+                          onClick={() => speak(card.back)}
+                          aria-label={`Озвучить: ${card.back}`}
+                        >
+                          <strong>{card.back}</strong>
+                          <i aria-hidden="true">◖))</i>
+                        </button>
                       </li>
                     ))}
                   </ul>
