@@ -105,6 +105,15 @@ test("hides an opened hint with Shift+H", async () => {
   assert.match(source, /<kbd>Shift<\/kbd>\+<kbd>H<\/kbd> скрыть/);
 });
 
+test("returns to the saved deck list with the Escape key", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /event\.key === "Escape" && !event\.repeat/);
+  assert.match(source, /event\.preventDefault\(\);[\s\S]*?setView\("home"\)/);
+  assert.match(source, /<kbd>Esc<\/kbd> к наборам/);
+  assert.match(source, /window\.localStorage\.setItem\(SESSION_KEY, JSON\.stringify\(snapshot\)\)/);
+});
+
 test("pronounces the visible card side with the P key", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
