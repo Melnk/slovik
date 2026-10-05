@@ -66,6 +66,17 @@ test("offers pronunciation for the visible card side", async () => {
   assert.match(source, /flipped \? cardBack : cardFront/);
 });
 
+test("pronounces the revealed card pair in study order", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /const speakPair = useCallback/);
+  assert.match(source, /\[first, second\]\.forEach\(\(text\) =>/);
+  assert.match(source, /flipped && \([\s\S]*?onClick=\{\(\) => speakPair\(cardFront, cardBack\)\}/);
+  assert.match(source, /aria-label=\{`Озвучить пару:/);
+  assert.match(source, /event\.code === "KeyB"/);
+  assert.match(source, /<kbd>B<\/kbd> озвучить пару/);
+});
+
 test("reveals the hidden answer one letter at a time without showing it completely", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 

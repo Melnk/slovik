@@ -331,6 +331,21 @@ export default function StudyApp() {
     window.speechSynthesis.speak(utterance);
   }, []);
 
+  const speakPair = useCallback((first: string, second: string) => {
+    if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+      setNotice("Озвучивание не поддерживается в этом браузере");
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    [first, second].forEach((text) => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = /[\u0400-\u04ff]/.test(text) ? "ru-RU" : "en-US";
+      utterance.rate = 0.9;
+      window.speechSynthesis.speak(utterance);
+    });
+  }, []);
+
   const toggleAutoPronounce = useCallback(() => {
     if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
       setNotice("Озвучивание не поддерживается в этом браузере");
@@ -555,10 +570,17 @@ export default function StudyApp() {
         event.preventDefault();
         toggleAutoPronounce();
       }
+      if (event.code === "KeyB" && !event.repeat && flipped && !switching && currentCard) {
+        event.preventDefault();
+        speakPair(
+          reverse ? currentCard.back : currentCard.front,
+          reverse ? currentCard.front : currentCard.back,
+        );
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [cardIndex, currentCard, finished, flipped, markAnswer, postponeCard, revealAnswerHint, revealedHintLetters, reverse, shuffleRemainingCards, speak, studyCards.length, studyMode, switching, toggleAutoPronounce, toggleStudyDirection, view]);
+  }, [cardIndex, currentCard, finished, flipped, markAnswer, postponeCard, revealAnswerHint, revealedHintLetters, reverse, shuffleRemainingCards, speak, speakPair, studyCards.length, studyMode, switching, toggleAutoPronounce, toggleStudyDirection, view]);
 
   function prepareStudy(deck: Deck) {
     clearSavedSession();
@@ -876,6 +898,18 @@ export default function StudyApp() {
                   <span aria-hidden="true">◖))</span>
                   Медленно
                 </button>
+                {flipped && (
+                  <button
+                    className="pronunciation-button"
+                    type="button"
+                    onClick={() => speakPair(cardFront, cardBack)}
+                    disabled={switching}
+                    aria-label={`Озвучить пару: ${cardFront} — ${cardBack}`}
+                  >
+                    <span aria-hidden="true">◖))</span>
+                    Озвучить пару
+                  </button>
+                )}
                 <button
                   className="pronunciation-button"
                   type="button"
@@ -897,7 +931,7 @@ export default function StudyApp() {
                   <strong>Вспомнил!</strong><small>стрелка вправо</small><span>→</span>
                 </button>
               </div>
-              <p className="keyboard-tip"><kbd>Esc</kbd> к наборам · <kbd>Пробел</kbd> перевернуть · <kbd>H</kbd> подсказка · <kbd>Shift</kbd>+<kbd>H</kbd> скрыть · <kbd>L</kbd> послушать ответ · <kbd>Shift</kbd>+<kbd>L</kbd> ответ медленно · <kbd>R</kbd> позже · <kbd>S</kbd> перемешать · <kbd>D</kbd> направление · <kbd>P</kbd> озвучить · <kbd>Shift</kbd>+<kbd>P</kbd> медленно · <kbd>A</kbd> автоозвучивание · <kbd>←</kbd><kbd>→</kbd> ответить</p>
+              <p className="keyboard-tip"><kbd>Esc</kbd> к наборам · <kbd>Пробел</kbd> перевернуть · <kbd>H</kbd> подсказка · <kbd>Shift</kbd>+<kbd>H</kbd> скрыть · <kbd>L</kbd> послушать ответ · <kbd>Shift</kbd>+<kbd>L</kbd> ответ медленно · <kbd>R</kbd> позже · <kbd>S</kbd> перемешать · <kbd>D</kbd> направление · <kbd>P</kbd> озвучить · <kbd>Shift</kbd>+<kbd>P</kbd> медленно · <kbd>B</kbd> озвучить пару · <kbd>A</kbd> автоозвучивание · <kbd>←</kbd><kbd>→</kbd> ответить</p>
             </>
           ) : (
             <div className="result-card">
