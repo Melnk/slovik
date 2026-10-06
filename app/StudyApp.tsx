@@ -346,6 +346,21 @@ export default function StudyApp() {
     });
   }, []);
 
+  const speakCards = useCallback((cards: WordCard[]) => {
+    if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+      setNotice("Озвучивание не поддерживается в этом браузере");
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    cards.flatMap((card) => [card.front, card.back]).forEach((text) => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = /[\u0400-\u04ff]/.test(text) ? "ru-RU" : "en-US";
+      utterance.rate = 0.9;
+      window.speechSynthesis.speak(utterance);
+    });
+  }, []);
+
   const toggleAutoPronounce = useCallback(() => {
     if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
       setNotice("Озвучивание не поддерживается в этом браузере");
@@ -977,13 +992,23 @@ export default function StudyApp() {
                       </li>
                     ))}
                   </ul>
-                  <button
-                    className="copy-missed-button"
-                    type="button"
-                    onClick={() => copyCards(missedCards, `Скопировано ошибок: ${missedCards.length}`)}
-                  >
-                    ⧉ Скопировать ошибки
-                  </button>
+                  <div className="missed-word-actions">
+                    <button
+                      className="copy-missed-button"
+                      type="button"
+                      onClick={() => speakCards(missedCards)}
+                      aria-label="Озвучить все ошибки по порядку"
+                    >
+                      ◖)) Прослушать ошибки
+                    </button>
+                    <button
+                      className="copy-missed-button"
+                      type="button"
+                      onClick={() => copyCards(missedCards, `Скопировано ошибок: ${missedCards.length}`)}
+                    >
+                      ⧉ Скопировать ошибки
+                    </button>
+                  </div>
                 </details>
               )}
               <div className="result-actions">

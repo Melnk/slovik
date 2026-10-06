@@ -217,6 +217,16 @@ test("pronounces either side of a missed word pair from the study result", async
   assert.match(source, /aria-label=\{`Озвучить: \$\{card\.back\}`\}/);
 });
 
+test("pronounces every missed word pair from the study result", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /const speakCards = useCallback/);
+  assert.match(source, /cards\.flatMap\(\(card\) => \[card\.front, card\.back\]\)\.forEach/);
+  assert.match(source, /onClick=\{\(\) => speakCards\(missedCards\)\}/);
+  assert.match(source, /aria-label="Озвучить все ошибки по порядку"/);
+  assert.match(source, /Прослушать ошибки/);
+});
+
 test("copies only the missed word pairs from the finished study screen", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
