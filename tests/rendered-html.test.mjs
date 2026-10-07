@@ -198,6 +198,15 @@ test("starts a focused review with only the mistakes from the finished study ses
   assert.match(source, /Повторить ошибки \(\{missedCards\.length\}\)/);
 });
 
+test("repeats only missed cards in the opposite direction", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /function startOppositeReview\(deck: Deck, cards: WordCard\[\]\)/);
+  assert.match(source, /startReview\(deck, cards\);[\s\S]*?setReverse\(\(value\) => !value\)/);
+  assert.match(source, /startOppositeReview\(activeDeck, missedCards\)/);
+  assert.match(source, /Ошибки в обратную сторону/);
+});
+
 test("shows the missed word pairs on the finished study screen", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 

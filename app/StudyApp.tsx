@@ -649,6 +649,11 @@ export default function StudyApp() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  function startOppositeReview(deck: Deck, cards: WordCard[]) {
+    startReview(deck, cards);
+    setReverse((value) => !value);
+  }
+
   function resumeSession(snapshot: SessionSnapshot) {
     const deck = decks.find((item) => item.id === snapshot.deckId);
     if (!deck) {
@@ -1013,9 +1018,14 @@ export default function StudyApp() {
               )}
               <div className="result-actions">
                 {studyMode === "learn" && missedCards.length > 0 ? (
-                  <button className="secondary-button" type="button" onClick={() => startReview(activeDeck, missedCards)}>
-                    Повторить ошибки ({missedCards.length})
-                  </button>
+                  <>
+                    <button className="secondary-button" type="button" onClick={() => startReview(activeDeck, missedCards)}>
+                      Повторить ошибки ({missedCards.length})
+                    </button>
+                    <button className="secondary-button" type="button" onClick={() => startOppositeReview(activeDeck, missedCards)}>
+                      Ошибки в обратную сторону
+                    </button>
+                  </>
                 ) : (
                   <button className="secondary-button" type="button" onClick={() => startReview(activeDeck)}>
                     {studyMode === "review" ? "Повторить ещё раз" : "Закрепить 5 слов"}
