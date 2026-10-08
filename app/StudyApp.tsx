@@ -331,7 +331,7 @@ export default function StudyApp() {
     window.speechSynthesis.speak(utterance);
   }, []);
 
-  const speakPair = useCallback((first: string, second: string) => {
+  const speakPair = useCallback((first: string, second: string, rate = 0.9) => {
     if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
       setNotice("Озвучивание не поддерживается в этом браузере");
       return;
@@ -341,7 +341,7 @@ export default function StudyApp() {
     [first, second].forEach((text) => {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = /[\u0400-\u04ff]/.test(text) ? "ru-RU" : "en-US";
-      utterance.rate = 0.9;
+      utterance.rate = rate;
       window.speechSynthesis.speak(utterance);
     });
   }, []);
@@ -590,6 +590,7 @@ export default function StudyApp() {
         speakPair(
           reverse ? currentCard.back : currentCard.front,
           reverse ? currentCard.front : currentCard.back,
+          event.shiftKey ? 0.65 : 0.9,
         );
       }
     };
@@ -930,6 +931,18 @@ export default function StudyApp() {
                     Озвучить пару
                   </button>
                 )}
+                {flipped && (
+                  <button
+                    className="pronunciation-button"
+                    type="button"
+                    onClick={() => speakPair(cardFront, cardBack, 0.65)}
+                    disabled={switching}
+                    aria-label={`Озвучить пару медленно: ${cardFront} — ${cardBack}`}
+                  >
+                    <span aria-hidden="true">◖))</span>
+                    Пара медленно
+                  </button>
+                )}
                 <button
                   className="pronunciation-button"
                   type="button"
@@ -951,7 +964,7 @@ export default function StudyApp() {
                   <strong>Вспомнил!</strong><small>стрелка вправо</small><span>→</span>
                 </button>
               </div>
-              <p className="keyboard-tip"><kbd>Esc</kbd> к наборам · <kbd>Пробел</kbd> перевернуть · <kbd>H</kbd> подсказка · <kbd>Shift</kbd>+<kbd>H</kbd> скрыть · <kbd>L</kbd> послушать ответ · <kbd>Shift</kbd>+<kbd>L</kbd> ответ медленно · <kbd>R</kbd> позже · <kbd>S</kbd> перемешать · <kbd>D</kbd> направление · <kbd>P</kbd> озвучить · <kbd>Shift</kbd>+<kbd>P</kbd> медленно · <kbd>B</kbd> озвучить пару · <kbd>A</kbd> автоозвучивание · <kbd>←</kbd><kbd>→</kbd> ответить</p>
+              <p className="keyboard-tip"><kbd>Esc</kbd> к наборам · <kbd>Пробел</kbd> перевернуть · <kbd>H</kbd> подсказка · <kbd>Shift</kbd>+<kbd>H</kbd> скрыть · <kbd>L</kbd> послушать ответ · <kbd>Shift</kbd>+<kbd>L</kbd> ответ медленно · <kbd>R</kbd> позже · <kbd>S</kbd> перемешать · <kbd>D</kbd> направление · <kbd>P</kbd> озвучить · <kbd>Shift</kbd>+<kbd>P</kbd> медленно · <kbd>B</kbd> озвучить пару · <kbd>Shift</kbd>+<kbd>B</kbd> пару медленно · <kbd>A</kbd> автоозвучивание · <kbd>←</kbd><kbd>→</kbd> ответить</p>
             </>
           ) : (
             <div className="result-card">

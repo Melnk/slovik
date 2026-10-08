@@ -77,6 +77,17 @@ test("pronounces the revealed card pair in study order", async () => {
   assert.match(source, /<kbd>B<\/kbd> озвучить пару/);
 });
 
+test("pronounces the revealed card pair slowly", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /const speakPair = useCallback\(\(first: string, second: string, rate = 0\.9\)/);
+  assert.match(source, /utterance\.rate = rate/);
+  assert.match(source, /onClick=\{\(\) => speakPair\(cardFront, cardBack, 0\.65\)\}/);
+  assert.match(source, /aria-label=\{`Озвучить пару медленно:/);
+  assert.match(source, /event\.shiftKey \? 0\.65 : 0\.9/);
+  assert.match(source, /<kbd>Shift<\/kbd>\+<kbd>B<\/kbd> пару медленно/);
+});
+
 test("reveals the hidden answer one letter at a time without showing it completely", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
