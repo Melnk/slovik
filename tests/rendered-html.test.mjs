@@ -88,6 +88,18 @@ test("pronounces the revealed card pair slowly", async () => {
   assert.match(source, /<kbd>Shift<\/kbd>\+<kbd>B<\/kbd> пару медленно/);
 });
 
+test("copies the revealed card pair without changing study progress", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /flipped && \([\s\S]*?copyCards\(\[currentCard\], "Пара скопирована"\)/);
+  assert.match(source, /aria-label=\{`Скопировать пару: \$\{currentCard\.front\} — \$\{currentCard\.back\}`\}/);
+  assert.match(source, /Скопировать пару/);
+  assert.doesNotMatch(
+    source.match(/onClick=\{\(\) => copyCards\(\[currentCard\],[\s\S]*?<\/button>/)?.[0] ?? "",
+    /setAnswers|setDecks|setSavedSession/,
+  );
+});
+
 test("reveals the hidden answer one letter at a time without showing it completely", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 

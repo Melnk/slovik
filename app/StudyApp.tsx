@@ -943,6 +943,18 @@ export default function StudyApp() {
                     Пара медленно
                   </button>
                 )}
+                {flipped && (
+                  <button
+                    className="hint-button"
+                    type="button"
+                    onClick={() => copyCards([currentCard], "Пара скопирована")}
+                    disabled={switching}
+                    aria-label={`Скопировать пару: ${currentCard.front} — ${currentCard.back}`}
+                  >
+                    <span aria-hidden="true">⧉</span>
+                    Скопировать пару
+                  </button>
+                )}
                 <button
                   className="pronunciation-button"
                   type="button"
