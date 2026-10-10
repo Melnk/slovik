@@ -100,6 +100,15 @@ test("copies the revealed card pair without changing study progress", async () =
   );
 });
 
+test("copies the revealed card pair with the C key", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /event\.code === "KeyC"/);
+  assert.match(source, /!event\.repeat && flipped && !switching && currentCard/);
+  assert.match(source, /void copyCards\(\[currentCard\], "Пара скопирована"\)/);
+  assert.match(source, /<kbd>C<\/kbd> скопировать пару/);
+});
+
 test("reveals the hidden answer one letter at a time without showing it completely", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
@@ -262,7 +271,7 @@ test("pronounces every missed word pair from the study result", async () => {
 test("copies only the missed word pairs from the finished study screen", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
-  assert.match(source, /async function copyCards\(cards: WordCard\[\], successMessage: string\)/);
+  assert.match(source, /const copyCards = useCallback\(async \(cards: WordCard\[\], successMessage: string\)/);
   assert.match(source, /cards[\s\S]*?\.map\(\(card\) => `\$\{card\.front\} — \$\{card\.back\}`\)/);
   assert.match(source, /navigator\.clipboard\.writeText\(wordList\)/);
   assert.match(source, /copyCards\(missedCards, `Скопировано ошибок: \$\{missedCards\.length\}`\)/);

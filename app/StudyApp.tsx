@@ -539,6 +539,19 @@ export default function StudyApp() {
     setRevealedHintLetters(0);
   }, [finished, switching]);
 
+  const copyCards = useCallback(async (cards: WordCard[], successMessage: string) => {
+    const wordList = cards
+      .map((card) => `${card.front} — ${card.back}`)
+      .join("\n");
+
+    try {
+      await window.navigator.clipboard.writeText(wordList);
+      setNotice(successMessage);
+    } catch {
+      window.prompt("Скопируй список слов", wordList);
+    }
+  }, []);
+
   useEffect(() => {
     if (view !== "study" || finished) return;
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -593,10 +606,14 @@ export default function StudyApp() {
           event.shiftKey ? 0.65 : 0.9,
         );
       }
+      if (event.code === "KeyC" && !event.repeat && flipped && !switching && currentCard) {
+        event.preventDefault();
+        void copyCards([currentCard], "Пара скопирована");
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [cardIndex, currentCard, finished, flipped, markAnswer, postponeCard, revealAnswerHint, revealedHintLetters, reverse, shuffleRemainingCards, speak, speakPair, studyCards.length, studyMode, switching, toggleAutoPronounce, toggleStudyDirection, view]);
+  }, [cardIndex, copyCards, currentCard, finished, flipped, markAnswer, postponeCard, revealAnswerHint, revealedHintLetters, reverse, shuffleRemainingCards, speak, speakPair, studyCards.length, studyMode, switching, toggleAutoPronounce, toggleStudyDirection, view]);
 
   function prepareStudy(deck: Deck) {
     clearSavedSession();
@@ -726,19 +743,6 @@ export default function StudyApp() {
       item.id === deck.id ? { ...item, title: normalizedTitle } : item
     )));
     setNotice("Название набора изменено");
-  }
-
-  async function copyCards(cards: WordCard[], successMessage: string) {
-    const wordList = cards
-      .map((card) => `${card.front} — ${card.back}`)
-      .join("\n");
-
-    try {
-      await window.navigator.clipboard.writeText(wordList);
-      setNotice(successMessage);
-    } catch {
-      window.prompt("Скопируй список слов", wordList);
-    }
   }
 
   function copyDeck(deck: Deck) {
@@ -976,7 +980,7 @@ export default function StudyApp() {
                   <strong>Вспомнил!</strong><small>стрелка вправо</small><span>→</span>
                 </button>
               </div>
-              <p className="keyboard-tip"><kbd>Esc</kbd> к наборам · <kbd>Пробел</kbd> перевернуть · <kbd>H</kbd> подсказка · <kbd>Shift</kbd>+<kbd>H</kbd> скрыть · <kbd>L</kbd> послушать ответ · <kbd>Shift</kbd>+<kbd>L</kbd> ответ медленно · <kbd>R</kbd> позже · <kbd>S</kbd> перемешать · <kbd>D</kbd> направление · <kbd>P</kbd> озвучить · <kbd>Shift</kbd>+<kbd>P</kbd> медленно · <kbd>B</kbd> озвучить пару · <kbd>Shift</kbd>+<kbd>B</kbd> пару медленно · <kbd>A</kbd> автоозвучивание · <kbd>←</kbd><kbd>→</kbd> ответить</p>
+              <p className="keyboard-tip"><kbd>Esc</kbd> к наборам · <kbd>Пробел</kbd> перевернуть · <kbd>H</kbd> подсказка · <kbd>Shift</kbd>+<kbd>H</kbd> скрыть · <kbd>L</kbd> послушать ответ · <kbd>Shift</kbd>+<kbd>L</kbd> ответ медленно · <kbd>R</kbd> позже · <kbd>S</kbd> перемешать · <kbd>D</kbd> направление · <kbd>P</kbd> озвучить · <kbd>Shift</kbd>+<kbd>P</kbd> медленно · <kbd>B</kbd> озвучить пару · <kbd>Shift</kbd>+<kbd>B</kbd> пару медленно · <kbd>C</kbd> скопировать пару · <kbd>A</kbd> автоозвучивание · <kbd>←</kbd><kbd>→</kbd> ответить</p>
             </>
           ) : (
             <div className="result-card">
