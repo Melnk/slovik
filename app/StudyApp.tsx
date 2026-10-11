@@ -220,6 +220,7 @@ export default function StudyApp() {
   const [finished, setFinished] = useState(false);
   const [revealedHintLetters, setRevealedHintLetters] = useState(0);
   const [autoPronounce, setAutoPronounce] = useState(false);
+  const [missedTranslationsHidden, setMissedTranslationsHidden] = useState(false);
   const [savedSession, setSavedSession] = useState<SessionSnapshot | null>(null);
   const [notice, setNotice] = useState("");
   const titleRef = useRef<HTMLInputElement>(null);
@@ -626,6 +627,7 @@ export default function StudyApp() {
     setSwitching(false);
     setFinished(false);
     setRevealedHintLetters(0);
+    setMissedTranslationsHidden(false);
     setView("study");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -663,6 +665,7 @@ export default function StudyApp() {
     setSwitching(false);
     setFinished(false);
     setRevealedHintLetters(0);
+    setMissedTranslationsHidden(false);
     setView("study");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -702,6 +705,7 @@ export default function StudyApp() {
     setSwitching(false);
     setFinished(false);
     setRevealedHintLetters(0);
+    setMissedTranslationsHidden(false);
     setView("study");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -1001,6 +1005,15 @@ export default function StudyApp() {
               {studyMode === "learn" && missedCards.length > 0 && (
                 <details className="missed-word-list">
                   <summary>Посмотреть ошибки этого подхода</summary>
+                  <button
+                    className="missed-visibility-button"
+                    type="button"
+                    onClick={() => setMissedTranslationsHidden((hidden) => !hidden)}
+                    aria-pressed={missedTranslationsHidden}
+                  >
+                    <span aria-hidden="true">◉</span>
+                    {missedTranslationsHidden ? "Показать переводы" : "Скрыть переводы"}
+                  </button>
                   <ul>
                     {missedCards.map((card) => (
                       <li key={card.id}>
@@ -1018,9 +1031,13 @@ export default function StudyApp() {
                           className="missed-word-speech is-translation"
                           type="button"
                           onClick={() => speak(card.back)}
-                          aria-label={`Озвучить: ${card.back}`}
+                          aria-label={missedTranslationsHidden
+                            ? `Озвучить скрытый перевод для: ${card.front}`
+                            : `Озвучить: ${card.back}`}
                         >
-                          <strong>{card.back}</strong>
+                          <strong aria-hidden={missedTranslationsHidden || undefined}>
+                            {missedTranslationsHidden ? "•••••" : card.back}
+                          </strong>
                           <i aria-hidden="true">◖))</i>
                         </button>
                       </li>

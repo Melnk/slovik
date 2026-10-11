@@ -246,7 +246,18 @@ test("shows the missed word pairs on the finished study screen", async () => {
   assert.match(source, /<details className="missed-word-list">/);
   assert.match(source, /Посмотреть ошибки этого подхода/);
   assert.match(source, /missedCards\.map\(\(card\) =>/);
-  assert.match(source, /<span>\{card\.front\}<\/span>[\s\S]*?<strong>\{card\.back\}<\/strong>/);
+  assert.match(source, /<span>\{card\.front\}<\/span>[\s\S]*?missedTranslationsHidden \? "•••••" : card\.back/);
+});
+
+test("hides missed translations for a quick self-check", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /const \[missedTranslationsHidden, setMissedTranslationsHidden\] = useState\(false\)/);
+  assert.match(source, /onClick=\{\(\) => setMissedTranslationsHidden\(\(hidden\) => !hidden\)\}/);
+  assert.match(source, /aria-pressed=\{missedTranslationsHidden\}/);
+  assert.match(source, /missedTranslationsHidden \? "Показать переводы" : "Скрыть переводы"/);
+  assert.match(source, /missedTranslationsHidden \? "•••••" : card\.back/);
+  assert.match(source, /Озвучить скрытый перевод для: \$\{card\.front\}/);
 });
 
 test("pronounces either side of a missed word pair from the study result", async () => {
@@ -255,7 +266,7 @@ test("pronounces either side of a missed word pair from the study result", async
   assert.match(source, /className="missed-word-speech"[\s\S]*?onClick=\{\(\) => speak\(card\.front\)\}/);
   assert.match(source, /aria-label=\{`Озвучить: \$\{card\.front\}`\}/);
   assert.match(source, /className="missed-word-speech is-translation"[\s\S]*?onClick=\{\(\) => speak\(card\.back\)\}/);
-  assert.match(source, /aria-label=\{`Озвучить: \$\{card\.back\}`\}/);
+  assert.match(source, /: `Озвучить: \$\{card\.back\}`/);
 });
 
 test("pronounces every missed word pair from the study result", async () => {
