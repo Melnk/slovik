@@ -221,6 +221,7 @@ export default function StudyApp() {
   const [revealedHintLetters, setRevealedHintLetters] = useState(0);
   const [autoPronounce, setAutoPronounce] = useState(false);
   const [missedTranslationsHidden, setMissedTranslationsHidden] = useState(false);
+  const [revealedMissedTranslationIds, setRevealedMissedTranslationIds] = useState<string[]>([]);
   const [savedSession, setSavedSession] = useState<SessionSnapshot | null>(null);
   const [notice, setNotice] = useState("");
   const titleRef = useRef<HTMLInputElement>(null);
@@ -553,6 +554,11 @@ export default function StudyApp() {
     }
   }, []);
 
+  function toggleMissedTranslations() {
+    setMissedTranslationsHidden((hidden) => !hidden);
+    setRevealedMissedTranslationIds([]);
+  }
+
   useEffect(() => {
     if (view !== "study" || finished) return;
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -628,6 +634,7 @@ export default function StudyApp() {
     setFinished(false);
     setRevealedHintLetters(0);
     setMissedTranslationsHidden(false);
+    setRevealedMissedTranslationIds([]);
     setView("study");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -666,6 +673,7 @@ export default function StudyApp() {
     setFinished(false);
     setRevealedHintLetters(0);
     setMissedTranslationsHidden(false);
+    setRevealedMissedTranslationIds([]);
     setView("study");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -706,6 +714,7 @@ export default function StudyApp() {
     setFinished(false);
     setRevealedHintLetters(0);
     setMissedTranslationsHidden(false);
+    setRevealedMissedTranslationIds([]);
     setView("study");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -1008,40 +1017,57 @@ export default function StudyApp() {
                   <button
                     className="missed-visibility-button"
                     type="button"
-                    onClick={() => setMissedTranslationsHidden((hidden) => !hidden)}
+                    onClick={toggleMissedTranslations}
                     aria-pressed={missedTranslationsHidden}
                   >
                     <span aria-hidden="true">◉</span>
                     {missedTranslationsHidden ? "Показать переводы" : "Скрыть переводы"}
                   </button>
                   <ul>
-                    {missedCards.map((card) => (
-                      <li key={card.id}>
-                        <button
-                          className="missed-word-speech"
-                          type="button"
-                          onClick={() => speak(card.front)}
-                          aria-label={`Озвучить: ${card.front}`}
-                        >
-                          <span>{card.front}</span>
-                          <i aria-hidden="true">◖))</i>
-                        </button>
-                        <i aria-hidden="true">—</i>
-                        <button
-                          className="missed-word-speech is-translation"
-                          type="button"
-                          onClick={() => speak(card.back)}
-                          aria-label={missedTranslationsHidden
-                            ? `Озвучить скрытый перевод для: ${card.front}`
-                            : `Озвучить: ${card.back}`}
-                        >
-                          <strong aria-hidden={missedTranslationsHidden || undefined}>
-                            {missedTranslationsHidden ? "•••••" : card.back}
-                          </strong>
-                          <i aria-hidden="true">◖))</i>
-                        </button>
-                      </li>
-                    ))}
+                    {missedCards.map((card) => {
+                      const translationHidden = missedTranslationsHidden
+                        && !revealedMissedTranslationIds.includes(card.id);
+
+                      return (
+                        <li key={card.id}>
+                          <button
+                            className="missed-word-speech"
+                            type="button"
+                            onClick={() => speak(card.front)}
+                            aria-label={`Озвучить: ${card.front}`}
+                          >
+                            <span>{card.front}</span>
+                            <i aria-hidden="true">◖))</i>
+                          </button>
+                          <i aria-hidden="true">—</i>
+                          <span className="missed-translation">
+                            <button
+                              className="missed-word-speech is-translation"
+                              type="button"
+                              onClick={() => speak(card.back)}
+                              aria-label={translationHidden
+                                ? `Озвучить скрытый перевод для: ${card.front}`
+                                : `Озвучить: ${card.back}`}
+                            >
+                              <strong aria-hidden={translationHidden || undefined}>
+                                {translationHidden ? "•••••" : card.back}
+                              </strong>
+                              <i aria-hidden="true">◖))</i>
+                            </button>
+                            {translationHidden && (
+                              <button
+                                className="missed-reveal-button"
+                                type="button"
+                                onClick={() => setRevealedMissedTranslationIds((ids) => [...ids, card.id])}
+                                aria-label={`Показать перевод для: ${card.front}`}
+                              >
+                                Показать
+                              </button>
+                            )}
+                          </span>
+                        </li>
+                      );
+                    })}
                   </ul>
                   <div className="missed-word-actions">
                     <button

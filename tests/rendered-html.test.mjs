@@ -246,18 +246,30 @@ test("shows the missed word pairs on the finished study screen", async () => {
   assert.match(source, /<details className="missed-word-list">/);
   assert.match(source, /Посмотреть ошибки этого подхода/);
   assert.match(source, /missedCards\.map\(\(card\) =>/);
-  assert.match(source, /<span>\{card\.front\}<\/span>[\s\S]*?missedTranslationsHidden \? "•••••" : card\.back/);
+  assert.match(source, /<span>\{card\.front\}<\/span>[\s\S]*?translationHidden \? "•••••" : card\.back/);
 });
 
 test("hides missed translations for a quick self-check", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
   assert.match(source, /const \[missedTranslationsHidden, setMissedTranslationsHidden\] = useState\(false\)/);
-  assert.match(source, /onClick=\{\(\) => setMissedTranslationsHidden\(\(hidden\) => !hidden\)\}/);
+  assert.match(source, /function toggleMissedTranslations\(\)[\s\S]*?setMissedTranslationsHidden\(\(hidden\) => !hidden\)/);
+  assert.match(source, /onClick=\{toggleMissedTranslations\}/);
   assert.match(source, /aria-pressed=\{missedTranslationsHidden\}/);
   assert.match(source, /missedTranslationsHidden \? "Показать переводы" : "Скрыть переводы"/);
-  assert.match(source, /missedTranslationsHidden \? "•••••" : card\.back/);
+  assert.match(source, /translationHidden \? "•••••" : card\.back/);
   assert.match(source, /Озвучить скрытый перевод для: \$\{card\.front\}/);
+});
+
+test("reveals one missed translation without exposing the full list", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /const \[revealedMissedTranslationIds, setRevealedMissedTranslationIds\] = useState<string\[\]>\(\[\]\)/);
+  assert.match(source, /missedTranslationsHidden[\s\S]*?&& !revealedMissedTranslationIds\.includes\(card\.id\)/);
+  assert.match(source, /setRevealedMissedTranslationIds\(\(ids\) => \[\.\.\.ids, card\.id\]\)/);
+  assert.match(source, /aria-label=\{`Показать перевод для: \$\{card\.front\}`\}/);
+  assert.match(source, />\s*Показать\s*<\/button>/);
+  assert.match(source, /function toggleMissedTranslations\(\)[\s\S]*?setRevealedMissedTranslationIds\(\[\]\)/);
 });
 
 test("pronounces either side of a missed word pair from the study result", async () => {
