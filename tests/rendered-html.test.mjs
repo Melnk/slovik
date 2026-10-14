@@ -266,10 +266,25 @@ test("reveals one missed translation without exposing the full list", async () =
 
   assert.match(source, /const \[revealedMissedTranslationIds, setRevealedMissedTranslationIds\] = useState<string\[\]>\(\[\]\)/);
   assert.match(source, /missedTranslationsHidden[\s\S]*?&& !revealedMissedTranslationIds\.includes\(card\.id\)/);
-  assert.match(source, /setRevealedMissedTranslationIds\(\(ids\) => \[\.\.\.ids, card\.id\]\)/);
-  assert.match(source, /aria-label=\{`Показать перевод для: \$\{card\.front\}`\}/);
-  assert.match(source, />\s*Показать\s*<\/button>/);
+  assert.match(source, /function toggleMissedTranslation\(cardId: string\)/);
+  assert.match(source, /onClick=\{\(\) => toggleMissedTranslation\(card\.id\)\}/);
+  assert.match(source, /\? `Показать перевод для: \$\{card\.front\}`/);
+  assert.match(source, /\{translationHidden \? "Показать" : "Скрыть"\}/);
   assert.match(source, /function toggleMissedTranslations\(\)[\s\S]*?setRevealedMissedTranslationIds\(\[\]\)/);
+});
+
+test("hides an individually revealed missed translation for another recall attempt", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /function toggleMissedTranslation\(cardId: string\)[\s\S]*?ids\.includes\(cardId\)/);
+  assert.match(source, /ids\.filter\(\(id\) => id !== cardId\)/);
+  assert.match(source, /: \[\.\.\.ids, cardId\]/);
+  assert.match(source, /aria-label=\{translationHidden[\s\S]*?`Скрыть перевод для: \$\{card\.front\}`\}/);
+  assert.match(source, /\{translationHidden \? "Показать" : "Скрыть"\}/);
+  assert.doesNotMatch(
+    source.match(/function toggleMissedTranslation[\s\S]*?\n[ ]{2}\}/)?.[0] ?? "",
+    /localStorage|setDecks|setSavedSession/,
+  );
 });
 
 test("pronounces either side of a missed word pair from the study result", async () => {

@@ -559,6 +559,14 @@ export default function StudyApp() {
     setRevealedMissedTranslationIds([]);
   }
 
+  function toggleMissedTranslation(cardId: string) {
+    setRevealedMissedTranslationIds((ids) => (
+      ids.includes(cardId)
+        ? ids.filter((id) => id !== cardId)
+        : [...ids, cardId]
+    ));
+  }
+
   useEffect(() => {
     if (view !== "study" || finished) return;
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -1054,14 +1062,16 @@ export default function StudyApp() {
                               </strong>
                               <i aria-hidden="true">◖))</i>
                             </button>
-                            {translationHidden && (
+                            {missedTranslationsHidden && (
                               <button
                                 className="missed-reveal-button"
                                 type="button"
-                                onClick={() => setRevealedMissedTranslationIds((ids) => [...ids, card.id])}
-                                aria-label={`Показать перевод для: ${card.front}`}
+                                onClick={() => toggleMissedTranslation(card.id)}
+                                aria-label={translationHidden
+                                  ? `Показать перевод для: ${card.front}`
+                                  : `Скрыть перевод для: ${card.front}`}
                               >
-                                Показать
+                                {translationHidden ? "Показать" : "Скрыть"}
                               </button>
                             )}
                           </span>
