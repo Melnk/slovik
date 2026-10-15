@@ -312,7 +312,7 @@ kbd { display: inline-block; min-width: 22px; margin: 0 3px; padding: 3px 6px; b
 .missed-translation { display: flex; align-items: baseline; justify-content: flex-end; gap: 7px; min-width: 0; }
 .missed-reveal-button { flex: 0 0 auto; padding: 3px 6px; border: 1px solid #ded8d0; border-radius: 7px; background: var(--paper); color: var(--green-deep); font-size: 9px; font-weight: 800; cursor: pointer; }
 .missed-reveal-button:hover { border-color: #a9c2af; }
-.missed-word-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin: 0 17px 15px; }
+.missed-word-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin: 0 17px 15px; }
 .copy-missed-button { display: block; width: 100%; padding: 10px 12px; border: 1px solid #ded8d0; border-radius: 10px; background: var(--paper); color: var(--green-deep); font-size: 11px; font-weight: 800; cursor: pointer; }
 .copy-missed-button:hover { border-color: #a9c2af; }
 .result-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }

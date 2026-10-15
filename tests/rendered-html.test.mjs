@@ -306,6 +306,20 @@ test("pronounces every missed word pair from the study result", async () => {
   assert.match(source, /Прослушать ошибки/);
 });
 
+test("stops the missed-word playlist without changing study data", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /const stopSpeaking = useCallback/);
+  assert.match(source, /window\.speechSynthesis\.cancel\(\);[\s\S]*?setNotice\("Озвучивание остановлено"\)/);
+  assert.match(source, /onClick=\{stopSpeaking\}/);
+  assert.match(source, /aria-label="Остановить озвучивание ошибок"/);
+  assert.match(source, /■ Остановить/);
+  assert.doesNotMatch(
+    source.match(/const stopSpeaking[\s\S]*?\}, \[\]\);/)?.[0] ?? "",
+    /localStorage|setDecks|setSavedSession|setAnswers/,
+  );
+});
+
 test("copies only the missed word pairs from the finished study screen", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 

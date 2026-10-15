@@ -363,6 +363,12 @@ export default function StudyApp() {
     });
   }, []);
 
+  const stopSpeaking = useCallback(() => {
+    if (!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    setNotice("Озвучивание остановлено");
+  }, []);
+
   const toggleAutoPronounce = useCallback(() => {
     if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
       setNotice("Озвучивание не поддерживается в этом браузере");
@@ -1087,6 +1093,14 @@ export default function StudyApp() {
                       aria-label="Озвучить все ошибки по порядку"
                     >
                       ◖)) Прослушать ошибки
+                    </button>
+                    <button
+                      className="copy-missed-button"
+                      type="button"
+                      onClick={stopSpeaking}
+                      aria-label="Остановить озвучивание ошибок"
+                    >
+                      ■ Остановить
                     </button>
                     <button
                       className="copy-missed-button"
