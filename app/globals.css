@@ -117,6 +117,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .privacy-note { margin: 15px 0 0; text-align: center; color: #9aa39e; font-size: 10px; }
 .privacy-note span { color: #5f8b6d; }
 .parse-warning { margin: 10px 0 -6px; color: #b1684d; font-size: 11px; line-height: 1.4; }
+.parse-warning summary { width: fit-content; cursor: pointer; font-weight: 700; }
+.parse-warning p { margin: 8px 0 5px; }
+.parse-warning ul { max-height: 112px; margin: 0; padding: 8px 10px 8px 27px; overflow: auto; border: 1px solid #efd8cf; border-radius: 9px; background: #fff8f4; }
+.parse-warning li { padding: 2px 0; overflow-wrap: anywhere; }
 
 .library-section {
   width: min(1180px, calc(100% - 48px));

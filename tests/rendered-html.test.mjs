@@ -57,6 +57,19 @@ test("keeps the finished app free of starter preview code", async () => {
   );
 });
 
+test("shows the exact import lines that were not recognized", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /<details className="parse-warning">/);
+  assert.match(source, /Не распознано строк: \{parsed\.skipped\.length\}\. Показать/);
+  assert.match(source, /parsed\.skipped\.map\(\(line, index\) =>/);
+  assert.match(source, /<li key=\{`\$\{index\}-\$\{line\}`\}>\{line\}<\/li>/);
+  assert.doesNotMatch(
+    source.match(/<details className="parse-warning">[\s\S]*?<\/details>/)?.[0] ?? "",
+    /setDecks|localStorage|createDeck/,
+  );
+});
+
 test("offers pronunciation for the visible card side", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 

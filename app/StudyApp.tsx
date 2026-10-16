@@ -1191,7 +1191,15 @@ export default function StudyApp() {
           </label>
           <textarea id="word-list" className="words-input" value={rawText} onChange={(event) => setRawText(event.target.value)} placeholder={'journey - путешествие\ncozy - уютный'} spellCheck={false} />
           {parsed.skipped.length > 0 && (
-            <p className="parse-warning">Не распознано строк: {parsed.skipped.length}. Проверь тире и перевод.</p>
+            <details className="parse-warning">
+              <summary>Не распознано строк: {parsed.skipped.length}. Показать</summary>
+              <p>Проверь тире, обе части пары и повторяющиеся строки:</p>
+              <ul>
+                {parsed.skipped.map((line, index) => (
+                  <li key={`${index}-${line}`}>{line}</li>
+                ))}
+              </ul>
+            </details>
           )}
           <button className="primary-button" type="button" onClick={createDeck} disabled={parsed.cards.length === 0}>
             Создать {parsed.cards.length || ""} карточки <span aria-hidden="true">→</span>
