@@ -343,6 +343,18 @@ test("copies only the missed word pairs from the finished study screen", async (
   assert.match(source, /Скопировать ошибки/);
 });
 
+test("copies one missed word pair from the finished study screen", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /className="copy-missed-pair-button"/);
+  assert.match(source, /copyCards\(\[card\], "Пара скопирована"\)/);
+  assert.match(source, /aria-label=\{`Скопировать пару: \$\{card\.front\} — \$\{card\.back\}`\}/);
+  assert.doesNotMatch(
+    source.match(/className="copy-missed-pair-button"[\s\S]*?<\/button>/)?.[0] ?? "",
+    /localStorage|setDecks|setSavedSession|setAnswers/,
+  );
+});
+
 test("repeats the same study cards directly from a finished session", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 

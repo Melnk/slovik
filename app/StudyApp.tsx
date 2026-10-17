@@ -1080,6 +1080,15 @@ export default function StudyApp() {
                                 {translationHidden ? "Показать" : "Скрыть"}
                               </button>
                             )}
+                            <button
+                              className="copy-missed-pair-button"
+                              type="button"
+                              onClick={() => copyCards([card], "Пара скопирована")}
+                              aria-label={`Скопировать пару: ${card.front} — ${card.back}`}
+                              title="Скопировать пару"
+                            >
+                              ⧉
+                            </button>
                           </span>
                         </li>
                       );
