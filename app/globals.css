@@ -121,6 +121,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .parse-warning p { margin: 8px 0 5px; }
 .parse-warning ul { max-height: 112px; margin: 0; padding: 8px 10px 8px 27px; overflow: auto; border: 1px solid #efd8cf; border-radius: 9px; background: #fff8f4; }
 .parse-warning li { padding: 2px 0; overflow-wrap: anywhere; }
+.parse-copy-button { margin-top: 8px; padding: 0; border: 0; background: transparent; color: #9a5740; font: inherit; font-weight: 800; cursor: pointer; }
+.parse-copy-button:hover { color: #723e2d; text-decoration: underline; }
 
 .library-section {
   width: min(1180px, calc(100% - 48px));

@@ -70,6 +70,21 @@ test("shows the exact import lines that were not recognized", async () => {
   );
 });
 
+test("copies every skipped import line for quick correction", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /async function copySkippedLines\(\)/);
+  assert.match(source, /const skippedLines = parsed\.skipped\.join\("\\n"\)/);
+  assert.match(source, /navigator\.clipboard\.writeText\(skippedLines\)/);
+  assert.match(source, /window\.prompt\("Скопируй нераспознанные строки", skippedLines\)/);
+  assert.match(source, /onClick=\{copySkippedLines\}/);
+  assert.match(source, /Скопировать пропущенные строки/);
+  assert.doesNotMatch(
+    source.match(/async function copySkippedLines[\s\S]*?\n {2}\}/)?.[0] ?? "",
+    /setDecks|localStorage|createDeck/,
+  );
+});
+
 test("offers pronunciation for the visible card side", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 

@@ -776,6 +776,17 @@ export default function StudyApp() {
     return copyCards(deck.cards, `Скопировано карточек: ${deck.cards.length}`);
   }
 
+  async function copySkippedLines() {
+    const skippedLines = parsed.skipped.join("\n");
+
+    try {
+      await window.navigator.clipboard.writeText(skippedLines);
+      setNotice(`Скопировано строк: ${parsed.skipped.length}`);
+    } catch {
+      window.prompt("Скопируй нераспознанные строки", skippedLines);
+    }
+  }
+
   function deleteDeck(deckId: string) {
     const deck = decks.find((item) => item.id === deckId);
     if (!deck || !window.confirm(`Удалить набор «${deck.title}»?`)) return;
@@ -1208,6 +1219,9 @@ export default function StudyApp() {
                   <li key={`${index}-${line}`}>{line}</li>
                 ))}
               </ul>
+              <button className="parse-copy-button" type="button" onClick={copySkippedLines}>
+                ⧉ Скопировать пропущенные строки
+              </button>
             </details>
           )}
           <button className="primary-button" type="button" onClick={createDeck} disabled={parsed.cards.length === 0}>
