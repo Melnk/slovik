@@ -776,6 +776,11 @@ export default function StudyApp() {
     return copyCards(deck.cards, `Скопировано карточек: ${deck.cards.length}`);
   }
 
+  function copyDifficultCards(deck: Deck) {
+    const difficultCards = getDifficultCards(deck);
+    return copyCards(difficultCards, `Скопировано сложных слов: ${difficultCards.length}`);
+  }
+
   async function copySkippedLines() {
     const skippedLines = parsed.skipped.join("\n");
 
@@ -1300,6 +1305,15 @@ export default function StudyApp() {
                       <> · <b>{countDifficultCards(deck)} сложн.</b></>
                     )}
                   </small>
+                  {countDifficultCards(deck) > 0 && (
+                    <button
+                      className="quick-study-link"
+                      type="button"
+                      onClick={() => copyDifficultCards(deck)}
+                    >
+                      Скопировать сложные слова
+                    </button>
+                  )}
                   {deck.cards.length > QUICK_STUDY_CARDS && (
                     <button
                       className="quick-study-link"

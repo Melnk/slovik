@@ -531,6 +531,20 @@ test("copies a deck without changing its saved data", async () => {
   assert.match(source, /onClick=\{\(\) => copyDeck\(deck\)\}/);
 });
 
+test("copies only difficult words from a deck without changing saved data", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /function copyDifficultCards\(deck: Deck\)/);
+  assert.match(source, /const difficultCards = getDifficultCards\(deck\)/);
+  assert.match(source, /copyCards\(difficultCards, `Скопировано сложных слов: \$\{difficultCards\.length\}`\)/);
+  assert.match(source, /onClick=\{\(\) => copyDifficultCards\(deck\)\}/);
+  assert.match(source, /Скопировать сложные слова/);
+  assert.doesNotMatch(
+    source.match(/function copyDifficultCards[\s\S]*?\n {2}\}/)?.[0] ?? "",
+    /setDecks|localStorage|removeItem|createDeck/,
+  );
+});
+
 test("resets the card face before replacing its content", async () => {
   const [source, css] = await Promise.all([
     readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8"),
