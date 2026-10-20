@@ -658,6 +658,11 @@ export default function StudyApp() {
     setStudyCards(shuffle(deck.cards));
   }
 
+  function startOrderedStudy(deck: Deck) {
+    prepareStudy(deck);
+    setStudyCards(deck.cards);
+  }
+
   function startQuickStudy(deck: Deck) {
     prepareStudy(deck);
     setStudyCards(shuffle(deck.cards).slice(0, QUICK_STUDY_CARDS));
@@ -1314,6 +1319,13 @@ export default function StudyApp() {
                       Скопировать сложные слова
                     </button>
                   )}
+                  <button
+                    className="quick-study-link"
+                    type="button"
+                    onClick={() => startOrderedStudy(deck)}
+                  >
+                    Учить по порядку →
+                  </button>
                   {deck.cards.length > QUICK_STUDY_CARDS && (
                     <button
                       className="quick-study-link"

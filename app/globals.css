@@ -154,7 +154,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .deck-search-controls button { font-size: 14px; }
 .deck-search p { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
 .deck-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-.deck-card { position: relative; min-height: 305px; padding: 25px; overflow: hidden; border: 1px solid rgba(36, 49, 44, .1); border-radius: 21px; background: var(--paper); box-shadow: 0 10px 35px rgba(63, 73, 65, .06); }
+.deck-card { position: relative; min-height: 330px; padding: 25px; overflow: hidden; border: 1px solid rgba(36, 49, 44, .1); border-radius: 21px; background: var(--paper); box-shadow: 0 10px 35px rgba(63, 73, 65, .06); }
 .deck-card::after { content: ""; position: absolute; width: 150px; height: 150px; right: -70px; top: -70px; border-radius: 50%; background: var(--deck-glow); opacity: .55; }
 .deck-tone-0 { --deck-accent: #ff6c44; --deck-soft: #ffede6; --deck-glow: #ffcfbf; }
 .deck-tone-1 { --deck-accent: #45705a; --deck-soft: #e4efe6; --deck-glow: #bad9c2; }

@@ -482,6 +482,19 @@ test("randomizes study sessions and builds a mixed five-card review", async () =
   assert.match(source, /return shuffle\(selectedCards\)/);
 });
 
+test("starts an ordered study session without changing the saved deck", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /function startOrderedStudy\(deck: Deck\)/);
+  assert.match(source, /prepareStudy\(deck\);[\s\S]*?setStudyCards\(deck\.cards\)/);
+  assert.match(source, /onClick=\{\(\) => startOrderedStudy\(deck\)\}/);
+  assert.match(source, /Учить по порядку/);
+  assert.doesNotMatch(
+    source.match(/function startOrderedStudy[\s\S]*?\n {2}\}/)?.[0] ?? "",
+    /setDecks|localStorage|removeItem|createDeck|shuffle/,
+  );
+});
+
 test("shows how many difficult words each deck contains", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
