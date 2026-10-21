@@ -1336,6 +1336,18 @@ export default function StudyApp() {
                     </button>
                   )}
                 </div>
+                <details className="deck-word-list">
+                  <summary>Посмотреть слова</summary>
+                  <ul>
+                    {deck.cards.map((card) => (
+                      <li key={card.id}>
+                        <span>{card.front}</span>
+                        <i aria-hidden="true">—</i>
+                        <strong>{card.back}</strong>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
                 <div className={`deck-actions ${countDifficultCards(deck) > 0 ? "has-difficult" : ""}`}>
                   <button className="review-button" type="button" onClick={() => startReview(deck)}>
                     <span aria-hidden="true">↻</span> Повторить

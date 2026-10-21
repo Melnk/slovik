@@ -154,7 +154,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .deck-search-controls button { font-size: 14px; }
 .deck-search p { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
 .deck-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-.deck-card { position: relative; min-height: 330px; padding: 25px; overflow: hidden; border: 1px solid rgba(36, 49, 44, .1); border-radius: 21px; background: var(--paper); box-shadow: 0 10px 35px rgba(63, 73, 65, .06); }
+.deck-card { position: relative; display: flex; flex-direction: column; min-height: 330px; padding: 25px; overflow: hidden; border: 1px solid rgba(36, 49, 44, .1); border-radius: 21px; background: var(--paper); box-shadow: 0 10px 35px rgba(63, 73, 65, .06); }
 .deck-card::after { content: ""; position: absolute; width: 150px; height: 150px; right: -70px; top: -70px; border-radius: 50%; background: var(--deck-glow); opacity: .55; }
 .deck-tone-0 { --deck-accent: #ff6c44; --deck-soft: #ffede6; --deck-glow: #ffcfbf; }
 .deck-tone-1 { --deck-accent: #45705a; --deck-soft: #e4efe6; --deck-glow: #bad9c2; }
@@ -178,7 +178,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .deck-progress small b { color: var(--deck-accent); font-weight: 800; }
 .quick-study-link { display: block; margin-top: 10px; padding: 0; border: 0; background: none; color: var(--deck-accent); font-size: 10px; font-weight: 800; cursor: pointer; }
 .quick-study-link:hover { text-decoration: underline; }
-.deck-actions { position: absolute; left: 25px; right: 25px; bottom: 22px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.deck-word-list { position: relative; z-index: 1; margin-top: 11px; color: var(--muted); font-size: 10px; }
+.deck-word-list summary { width: fit-content; color: var(--deck-accent); font-weight: 800; cursor: pointer; }
+.deck-word-list ul { max-height: 142px; margin: 9px 0 0; padding: 4px 10px; overflow: auto; border: 1px solid var(--line); border-radius: 10px; background: rgba(255, 255, 255, .55); list-style: none; }
+.deck-word-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 7px; padding: 6px 0; border-bottom: 1px solid #eceee8; }
+.deck-word-list li:last-child { border-bottom: 0; }
+.deck-word-list span, .deck-word-list strong { min-width: 0; overflow-wrap: anywhere; }
+.deck-word-list strong { color: var(--green-deep); text-align: right; }
+.deck-word-list i { color: #b0b7b2; font-style: normal; }
+.deck-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding-top: 20px; }
 .deck-actions.has-difficult { grid-template-columns: repeat(3, 1fr); }
 .study-button, .review-button, .difficult-button { display: flex; align-items: center; justify-content: space-between; height: 42px; padding: 0 13px; border: 0; border-radius: 11px; font-size: 11px; font-weight: 800; cursor: pointer; transition: transform .2s, background .2s, border-color .2s; }
 .study-button { background: var(--ink); color: white; }

@@ -558,6 +558,17 @@ test("copies only difficult words from a deck without changing saved data", asyn
   );
 });
 
+test("previews every word pair in a deck without changing saved data", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+  const preview = source.match(/<details className="deck-word-list">[\s\S]*?<\/details>/)?.[0] ?? "";
+
+  assert.match(preview, /<summary>Посмотреть слова<\/summary>/);
+  assert.match(preview, /deck\.cards\.map\(\(card\) =>/);
+  assert.match(preview, /<span>\{card\.front\}<\/span>/);
+  assert.match(preview, /<strong>\{card\.back\}<\/strong>/);
+  assert.doesNotMatch(preview, /onClick|setDecks|localStorage|removeItem/);
+});
+
 test("resets the card face before replacing its content", async () => {
   const [source, css] = await Promise.all([
     readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8"),
