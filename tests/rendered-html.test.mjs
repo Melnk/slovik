@@ -566,7 +566,18 @@ test("previews every word pair in a deck without changing saved data", async () 
   assert.match(preview, /deck\.cards\.map\(\(card\) =>/);
   assert.match(preview, /<span>\{card\.front\}<\/span>/);
   assert.match(preview, /<strong>\{card\.back\}<\/strong>/);
-  assert.doesNotMatch(preview, /onClick|setDecks|localStorage|removeItem/);
+  assert.doesNotMatch(preview, /setDecks|localStorage|removeItem/);
+});
+
+test("pronounces either side of a word pair from the deck preview", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+  const preview = source.match(/<details className="deck-word-list">[\s\S]*?<\/details>/)?.[0] ?? "";
+
+  assert.match(preview, /className="deck-word-speech"[\s\S]*?onClick=\{\(\) => speak\(card\.front\)\}/);
+  assert.match(preview, /aria-label=\{`Озвучить: \$\{card\.front\}`\}/);
+  assert.match(preview, /className="deck-word-speech is-translation"[\s\S]*?onClick=\{\(\) => speak\(card\.back\)\}/);
+  assert.match(preview, /aria-label=\{`Озвучить: \$\{card\.back\}`\}/);
+  assert.doesNotMatch(preview, /setDecks|localStorage|removeItem|setSavedSession/);
 });
 
 test("resets the card face before replacing its content", async () => {

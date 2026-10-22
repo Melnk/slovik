@@ -1341,9 +1341,25 @@ export default function StudyApp() {
                   <ul>
                     {deck.cards.map((card) => (
                       <li key={card.id}>
-                        <span>{card.front}</span>
+                        <button
+                          className="deck-word-speech"
+                          type="button"
+                          onClick={() => speak(card.front)}
+                          aria-label={`Озвучить: ${card.front}`}
+                        >
+                          <span>{card.front}</span>
+                          <small aria-hidden="true">♪</small>
+                        </button>
                         <i aria-hidden="true">—</i>
-                        <strong>{card.back}</strong>
+                        <button
+                          className="deck-word-speech is-translation"
+                          type="button"
+                          onClick={() => speak(card.back)}
+                          aria-label={`Озвучить: ${card.back}`}
+                        >
+                          <strong>{card.back}</strong>
+                          <small aria-hidden="true">♪</small>
+                        </button>
                       </li>
                     ))}
                   </ul>

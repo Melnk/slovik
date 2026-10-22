@@ -183,7 +183,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .deck-word-list ul { max-height: 142px; margin: 9px 0 0; padding: 4px 10px; overflow: auto; border: 1px solid var(--line); border-radius: 10px; background: rgba(255, 255, 255, .55); list-style: none; }
 .deck-word-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 7px; padding: 6px 0; border-bottom: 1px solid #eceee8; }
 .deck-word-list li:last-child { border-bottom: 0; }
-.deck-word-list span, .deck-word-list strong { min-width: 0; overflow-wrap: anywhere; }
+.deck-word-speech { display: flex; align-items: baseline; gap: 5px; min-width: 0; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.deck-word-speech span, .deck-word-speech strong { min-width: 0; overflow-wrap: anywhere; }
+.deck-word-speech small { flex: 0 0 auto; color: #9aaba0; font-size: 8px; opacity: .65; }
+.deck-word-speech:hover small { color: var(--orange); opacity: 1; }
+.deck-word-speech.is-translation { justify-content: flex-end; text-align: right; }
 .deck-word-list strong { color: var(--green-deep); text-align: right; }
 .deck-word-list i { color: #b0b7b2; font-style: normal; }
 .deck-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding-top: 20px; }
