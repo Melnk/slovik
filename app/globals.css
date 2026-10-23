@@ -180,6 +180,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .quick-study-link:hover { text-decoration: underline; }
 .deck-word-list { position: relative; z-index: 1; margin-top: 11px; color: var(--muted); font-size: 10px; }
 .deck-word-list summary { width: fit-content; color: var(--deck-accent); font-weight: 800; cursor: pointer; }
+.deck-word-visibility-button { display: flex; align-items: center; gap: 6px; margin-top: 9px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255, 255, 255, .55); color: var(--green-deep); font-size: 9px; font-weight: 800; cursor: pointer; }
+.deck-word-visibility-button span { color: var(--orange); }
+.deck-word-visibility-button[aria-pressed="true"] { border-color: #8fb29a; background: #e6f0e7; }
 .deck-word-list ul { max-height: 142px; margin: 9px 0 0; padding: 4px 10px; overflow: auto; border: 1px solid var(--line); border-radius: 10px; background: rgba(255, 255, 255, .55); list-style: none; }
 .deck-word-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 7px; padding: 6px 0; border-bottom: 1px solid #eceee8; }
 .deck-word-list li:last-child { border-bottom: 0; }

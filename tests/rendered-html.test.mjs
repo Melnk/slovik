@@ -565,7 +565,7 @@ test("previews every word pair in a deck without changing saved data", async () 
   assert.match(preview, /<summary>Посмотреть слова<\/summary>/);
   assert.match(preview, /deck\.cards\.map\(\(card\) =>/);
   assert.match(preview, /<span>\{card\.front\}<\/span>/);
-  assert.match(preview, /<strong>\{card\.back\}<\/strong>/);
+  assert.match(preview, /<strong>\{hiddenDeckTranslationIds\.includes\(deck\.id\) \? "•••••" : card\.back\}<\/strong>/);
   assert.doesNotMatch(preview, /setDecks|localStorage|removeItem/);
 });
 
@@ -576,8 +576,25 @@ test("pronounces either side of a word pair from the deck preview", async () => 
   assert.match(preview, /className="deck-word-speech"[\s\S]*?onClick=\{\(\) => speak\(card\.front\)\}/);
   assert.match(preview, /aria-label=\{`Озвучить: \$\{card\.front\}`\}/);
   assert.match(preview, /className="deck-word-speech is-translation"[\s\S]*?onClick=\{\(\) => speak\(card\.back\)\}/);
-  assert.match(preview, /aria-label=\{`Озвучить: \$\{card\.back\}`\}/);
+  assert.match(preview, /: `Озвучить: \$\{card\.back\}`/);
   assert.doesNotMatch(preview, /setDecks|localStorage|removeItem|setSavedSession/);
+});
+
+test("hides deck preview translations for a quick self-check", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+  const preview = source.match(/<details className="deck-word-list">[\s\S]*?<\/details>/)?.[0] ?? "";
+
+  assert.match(source, /const \[hiddenDeckTranslationIds, setHiddenDeckTranslationIds\] = useState<string\[\]>\(\[\]\)/);
+  assert.match(source, /function toggleDeckTranslations\(deckId: string\)/);
+  assert.match(preview, /onClick=\{\(\) => toggleDeckTranslations\(deck\.id\)\}/);
+  assert.match(preview, /aria-pressed=\{hiddenDeckTranslationIds\.includes\(deck\.id\)\}/);
+  assert.match(preview, /\? "Показать переводы" : "Скрыть переводы"/);
+  assert.match(preview, /\? "•••••" : card\.back/);
+  assert.match(preview, /`Озвучить скрытый перевод для: \$\{card\.front\}`/);
+  assert.doesNotMatch(
+    source.match(/function toggleDeckTranslations[\s\S]*?\n {2}\}/)?.[0] ?? "",
+    /localStorage|setDecks|setSavedSession|setAnswers/,
+  );
 });
 
 test("resets the card face before replacing its content", async () => {

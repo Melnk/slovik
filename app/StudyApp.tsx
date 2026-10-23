@@ -220,6 +220,7 @@ export default function StudyApp() {
   const [finished, setFinished] = useState(false);
   const [revealedHintLetters, setRevealedHintLetters] = useState(0);
   const [autoPronounce, setAutoPronounce] = useState(false);
+  const [hiddenDeckTranslationIds, setHiddenDeckTranslationIds] = useState<string[]>([]);
   const [missedTranslationsHidden, setMissedTranslationsHidden] = useState(false);
   const [revealedMissedTranslationIds, setRevealedMissedTranslationIds] = useState<string[]>([]);
   const [savedSession, setSavedSession] = useState<SessionSnapshot | null>(null);
@@ -563,6 +564,14 @@ export default function StudyApp() {
   function toggleMissedTranslations() {
     setMissedTranslationsHidden((hidden) => !hidden);
     setRevealedMissedTranslationIds([]);
+  }
+
+  function toggleDeckTranslations(deckId: string) {
+    setHiddenDeckTranslationIds((ids) => (
+      ids.includes(deckId)
+        ? ids.filter((id) => id !== deckId)
+        : [...ids, deckId]
+    ));
   }
 
   function toggleMissedTranslation(cardId: string) {
@@ -1338,6 +1347,15 @@ export default function StudyApp() {
                 </div>
                 <details className="deck-word-list">
                   <summary>Посмотреть слова</summary>
+                  <button
+                    className="deck-word-visibility-button"
+                    type="button"
+                    onClick={() => toggleDeckTranslations(deck.id)}
+                    aria-pressed={hiddenDeckTranslationIds.includes(deck.id)}
+                  >
+                    <span aria-hidden="true">◐</span>
+                    {hiddenDeckTranslationIds.includes(deck.id) ? "Показать переводы" : "Скрыть переводы"}
+                  </button>
                   <ul>
                     {deck.cards.map((card) => (
                       <li key={card.id}>
@@ -1355,9 +1373,11 @@ export default function StudyApp() {
                           className="deck-word-speech is-translation"
                           type="button"
                           onClick={() => speak(card.back)}
-                          aria-label={`Озвучить: ${card.back}`}
+                          aria-label={hiddenDeckTranslationIds.includes(deck.id)
+                            ? `Озвучить скрытый перевод для: ${card.front}`
+                            : `Озвучить: ${card.back}`}
                         >
-                          <strong>{card.back}</strong>
+                          <strong>{hiddenDeckTranslationIds.includes(deck.id) ? "•••••" : card.back}</strong>
                           <small aria-hidden="true">♪</small>
                         </button>
                       </li>
