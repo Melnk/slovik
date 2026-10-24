@@ -221,6 +221,7 @@ export default function StudyApp() {
   const [revealedHintLetters, setRevealedHintLetters] = useState(0);
   const [autoPronounce, setAutoPronounce] = useState(false);
   const [hiddenDeckTranslationIds, setHiddenDeckTranslationIds] = useState<string[]>([]);
+  const [revealedDeckTranslationKeys, setRevealedDeckTranslationKeys] = useState<string[]>([]);
   const [missedTranslationsHidden, setMissedTranslationsHidden] = useState(false);
   const [revealedMissedTranslationIds, setRevealedMissedTranslationIds] = useState<string[]>([]);
   const [savedSession, setSavedSession] = useState<SessionSnapshot | null>(null);
@@ -571,6 +572,18 @@ export default function StudyApp() {
       ids.includes(deckId)
         ? ids.filter((id) => id !== deckId)
         : [...ids, deckId]
+    ));
+    setRevealedDeckTranslationKeys((keys) => (
+      keys.filter((key) => !key.startsWith(`${deckId}:`))
+    ));
+  }
+
+  function toggleDeckTranslation(deckId: string, cardId: string) {
+    const key = `${deckId}:${cardId}`;
+    setRevealedDeckTranslationKeys((keys) => (
+      keys.includes(key)
+        ? keys.filter((item) => item !== key)
+        : [...keys, key]
     ));
   }
 
@@ -1357,31 +1370,52 @@ export default function StudyApp() {
                     {hiddenDeckTranslationIds.includes(deck.id) ? "Показать переводы" : "Скрыть переводы"}
                   </button>
                   <ul>
-                    {deck.cards.map((card) => (
-                      <li key={card.id}>
-                        <button
-                          className="deck-word-speech"
-                          type="button"
-                          onClick={() => speak(card.front)}
-                          aria-label={`Озвучить: ${card.front}`}
-                        >
-                          <span>{card.front}</span>
-                          <small aria-hidden="true">♪</small>
-                        </button>
-                        <i aria-hidden="true">—</i>
-                        <button
-                          className="deck-word-speech is-translation"
-                          type="button"
-                          onClick={() => speak(card.back)}
-                          aria-label={hiddenDeckTranslationIds.includes(deck.id)
-                            ? `Озвучить скрытый перевод для: ${card.front}`
-                            : `Озвучить: ${card.back}`}
-                        >
-                          <strong>{hiddenDeckTranslationIds.includes(deck.id) ? "•••••" : card.back}</strong>
-                          <small aria-hidden="true">♪</small>
-                        </button>
-                      </li>
-                    ))}
+                    {deck.cards.map((card) => {
+                      const translationKey = `${deck.id}:${card.id}`;
+                      const translationsHidden = hiddenDeckTranslationIds.includes(deck.id);
+                      const translationHidden = translationsHidden
+                        && !revealedDeckTranslationKeys.includes(translationKey);
+
+                      return (
+                        <li key={card.id}>
+                          <button
+                            className="deck-word-speech"
+                            type="button"
+                            onClick={() => speak(card.front)}
+                            aria-label={`Озвучить: ${card.front}`}
+                          >
+                            <span>{card.front}</span>
+                            <small aria-hidden="true">♪</small>
+                          </button>
+                          <i aria-hidden="true">—</i>
+                          <div className="deck-word-translation">
+                            <button
+                              className="deck-word-speech is-translation"
+                              type="button"
+                              onClick={() => speak(card.back)}
+                              aria-label={translationHidden
+                                ? `Озвучить скрытый перевод для: ${card.front}`
+                                : `Озвучить: ${card.back}`}
+                            >
+                              <strong>{translationHidden ? "•••••" : card.back}</strong>
+                              <small aria-hidden="true">♪</small>
+                            </button>
+                            {translationsHidden && (
+                              <button
+                                className="deck-word-reveal-button"
+                                type="button"
+                                onClick={() => toggleDeckTranslation(deck.id, card.id)}
+                                aria-label={translationHidden
+                                  ? `Показать перевод для: ${card.front}`
+                                  : `Скрыть перевод для: ${card.front}`}
+                              >
+                                {translationHidden ? "Показать" : "Скрыть"}
+                              </button>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </details>
                 <div className={`deck-actions ${countDifficultCards(deck) > 0 ? "has-difficult" : ""}`}>

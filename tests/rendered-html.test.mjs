@@ -565,7 +565,7 @@ test("previews every word pair in a deck without changing saved data", async () 
   assert.match(preview, /<summary>Посмотреть слова<\/summary>/);
   assert.match(preview, /deck\.cards\.map\(\(card\) =>/);
   assert.match(preview, /<span>\{card\.front\}<\/span>/);
-  assert.match(preview, /<strong>\{hiddenDeckTranslationIds\.includes\(deck\.id\) \? "•••••" : card\.back\}<\/strong>/);
+  assert.match(preview, /<strong>\{translationHidden \? "•••••" : card\.back\}<\/strong>/);
   assert.doesNotMatch(preview, /setDecks|localStorage|removeItem/);
 });
 
@@ -593,6 +593,23 @@ test("hides deck preview translations for a quick self-check", async () => {
   assert.match(preview, /`Озвучить скрытый перевод для: \$\{card\.front\}`/);
   assert.doesNotMatch(
     source.match(/function toggleDeckTranslations[\s\S]*?\n {2}\}/)?.[0] ?? "",
+    /localStorage|setDecks|setSavedSession|setAnswers/,
+  );
+});
+
+test("reveals one deck preview translation without exposing the full list", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+  const preview = source.match(/<details className="deck-word-list">[\s\S]*?<\/details>/)?.[0] ?? "";
+
+  assert.match(source, /const \[revealedDeckTranslationKeys, setRevealedDeckTranslationKeys\] = useState<string\[\]>\(\[\]\)/);
+  assert.match(preview, /const translationKey = `\$\{deck\.id\}:\$\{card\.id\}`/);
+  assert.match(preview, /translationsHidden[\s\S]*?&& !revealedDeckTranslationKeys\.includes\(translationKey\)/);
+  assert.match(source, /function toggleDeckTranslation\(deckId: string, cardId: string\)/);
+  assert.match(preview, /onClick=\{\(\) => toggleDeckTranslation\(deck\.id, card\.id\)\}/);
+  assert.match(preview, /\{translationHidden \? "Показать" : "Скрыть"\}/);
+  assert.match(source, /function toggleDeckTranslations\(deckId: string\)[\s\S]*?setRevealedDeckTranslationKeys/);
+  assert.doesNotMatch(
+    source.match(/function toggleDeckTranslation\(deckId[\s\S]*?\n {2}\}/)?.[0] ?? "",
     /localStorage|setDecks|setSavedSession|setAnswers/,
   );
 });

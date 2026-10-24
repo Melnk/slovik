@@ -191,6 +191,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .deck-word-speech small { flex: 0 0 auto; color: #9aaba0; font-size: 8px; opacity: .65; }
 .deck-word-speech:hover small { color: var(--orange); opacity: 1; }
 .deck-word-speech.is-translation { justify-content: flex-end; text-align: right; }
+.deck-word-translation { display: flex; min-width: 0; flex-direction: column; align-items: flex-end; gap: 3px; }
+.deck-word-reveal-button { padding: 0; border: 0; background: none; color: var(--deck-accent); font-size: 8px; font-weight: 800; cursor: pointer; }
+.deck-word-reveal-button:hover { text-decoration: underline; }
 .deck-word-list strong { color: var(--green-deep); text-align: right; }
 .deck-word-list i { color: #b0b7b2; font-style: normal; }
 .deck-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding-top: 20px; }
