@@ -220,6 +220,8 @@ export default function StudyApp() {
   const [finished, setFinished] = useState(false);
   const [revealedHintLetters, setRevealedHintLetters] = useState(0);
   const [autoPronounce, setAutoPronounce] = useState(false);
+  const [hiddenDeckWordIds, setHiddenDeckWordIds] = useState<string[]>([]);
+  const [revealedDeckWordKeys, setRevealedDeckWordKeys] = useState<string[]>([]);
   const [hiddenDeckTranslationIds, setHiddenDeckTranslationIds] = useState<string[]>([]);
   const [revealedDeckTranslationKeys, setRevealedDeckTranslationKeys] = useState<string[]>([]);
   const [missedTranslationsHidden, setMissedTranslationsHidden] = useState(false);
@@ -568,6 +570,7 @@ export default function StudyApp() {
   }
 
   function toggleDeckTranslations(deckId: string) {
+    const translationsWillBeHidden = !hiddenDeckTranslationIds.includes(deckId);
     setHiddenDeckTranslationIds((ids) => (
       ids.includes(deckId)
         ? ids.filter((id) => id !== deckId)
@@ -576,11 +579,40 @@ export default function StudyApp() {
     setRevealedDeckTranslationKeys((keys) => (
       keys.filter((key) => !key.startsWith(`${deckId}:`))
     ));
+    if (translationsWillBeHidden) {
+      setHiddenDeckWordIds((ids) => ids.filter((id) => id !== deckId));
+      setRevealedDeckWordKeys((keys) => keys.filter((key) => !key.startsWith(`${deckId}:`)));
+    }
+  }
+
+  function toggleDeckWords(deckId: string) {
+    const wordsWillBeHidden = !hiddenDeckWordIds.includes(deckId);
+    setHiddenDeckWordIds((ids) => (
+      ids.includes(deckId)
+        ? ids.filter((id) => id !== deckId)
+        : [...ids, deckId]
+    ));
+    setRevealedDeckWordKeys((keys) => (
+      keys.filter((key) => !key.startsWith(`${deckId}:`))
+    ));
+    if (wordsWillBeHidden) {
+      setHiddenDeckTranslationIds((ids) => ids.filter((id) => id !== deckId));
+      setRevealedDeckTranslationKeys((keys) => keys.filter((key) => !key.startsWith(`${deckId}:`)));
+    }
   }
 
   function toggleDeckTranslation(deckId: string, cardId: string) {
     const key = `${deckId}:${cardId}`;
     setRevealedDeckTranslationKeys((keys) => (
+      keys.includes(key)
+        ? keys.filter((item) => item !== key)
+        : [...keys, key]
+    ));
+  }
+
+  function toggleDeckWord(deckId: string, cardId: string) {
+    const key = `${deckId}:${cardId}`;
+    setRevealedDeckWordKeys((keys) => (
       keys.includes(key)
         ? keys.filter((item) => item !== key)
         : [...keys, key]
@@ -1360,33 +1392,64 @@ export default function StudyApp() {
                 </div>
                 <details className="deck-word-list">
                   <summary>Посмотреть слова</summary>
-                  <button
-                    className="deck-word-visibility-button"
-                    type="button"
-                    onClick={() => toggleDeckTranslations(deck.id)}
-                    aria-pressed={hiddenDeckTranslationIds.includes(deck.id)}
-                  >
-                    <span aria-hidden="true">◐</span>
-                    {hiddenDeckTranslationIds.includes(deck.id) ? "Показать переводы" : "Скрыть переводы"}
-                  </button>
+                  <div className="deck-word-visibility-controls">
+                    <button
+                      className="deck-word-visibility-button"
+                      type="button"
+                      onClick={() => toggleDeckWords(deck.id)}
+                      aria-pressed={hiddenDeckWordIds.includes(deck.id)}
+                    >
+                      <span aria-hidden="true">◐</span>
+                      {hiddenDeckWordIds.includes(deck.id) ? "Показать слова" : "Скрыть слова"}
+                    </button>
+                    <button
+                      className="deck-word-visibility-button"
+                      type="button"
+                      onClick={() => toggleDeckTranslations(deck.id)}
+                      aria-pressed={hiddenDeckTranslationIds.includes(deck.id)}
+                    >
+                      <span aria-hidden="true">◐</span>
+                      {hiddenDeckTranslationIds.includes(deck.id) ? "Показать переводы" : "Скрыть переводы"}
+                    </button>
+                  </div>
                   <ul>
                     {deck.cards.map((card) => {
+                      const wordKey = `${deck.id}:${card.id}`;
                       const translationKey = `${deck.id}:${card.id}`;
+                      const wordsHidden = hiddenDeckWordIds.includes(deck.id);
+                      const wordHidden = wordsHidden
+                        && !revealedDeckWordKeys.includes(wordKey);
                       const translationsHidden = hiddenDeckTranslationIds.includes(deck.id);
                       const translationHidden = translationsHidden
                         && !revealedDeckTranslationKeys.includes(translationKey);
 
                       return (
                         <li key={card.id}>
-                          <button
-                            className="deck-word-speech"
-                            type="button"
-                            onClick={() => speak(card.front)}
-                            aria-label={`Озвучить: ${card.front}`}
-                          >
-                            <span>{card.front}</span>
-                            <small aria-hidden="true">♪</small>
-                          </button>
+                          <div className="deck-word-front">
+                            <button
+                              className="deck-word-speech"
+                              type="button"
+                              onClick={() => speak(card.front)}
+                              aria-label={wordHidden
+                                ? `Озвучить скрытое слово для: ${card.back}`
+                                : `Озвучить: ${card.front}`}
+                            >
+                              <span>{wordHidden ? "•••••" : card.front}</span>
+                              <small aria-hidden="true">♪</small>
+                            </button>
+                            {wordsHidden && (
+                              <button
+                                className="deck-word-reveal-button"
+                                type="button"
+                                onClick={() => toggleDeckWord(deck.id, card.id)}
+                                aria-label={wordHidden
+                                  ? `Показать слово для: ${card.back}`
+                                  : `Скрыть слово для: ${card.back}`}
+                              >
+                                {wordHidden ? "Показать" : "Скрыть"}
+                              </button>
+                            )}
+                          </div>
                           <i aria-hidden="true">—</i>
                           <div className="deck-word-translation">
                             <button

@@ -564,7 +564,7 @@ test("previews every word pair in a deck without changing saved data", async () 
 
   assert.match(preview, /<summary>Посмотреть слова<\/summary>/);
   assert.match(preview, /deck\.cards\.map\(\(card\) =>/);
-  assert.match(preview, /<span>\{card\.front\}<\/span>/);
+  assert.match(preview, /<span>\{wordHidden \? "•••••" : card\.front\}<\/span>/);
   assert.match(preview, /<strong>\{translationHidden \? "•••••" : card\.back\}<\/strong>/);
   assert.doesNotMatch(preview, /setDecks|localStorage|removeItem/);
 });
@@ -574,7 +574,7 @@ test("pronounces either side of a word pair from the deck preview", async () => 
   const preview = source.match(/<details className="deck-word-list">[\s\S]*?<\/details>/)?.[0] ?? "";
 
   assert.match(preview, /className="deck-word-speech"[\s\S]*?onClick=\{\(\) => speak\(card\.front\)\}/);
-  assert.match(preview, /aria-label=\{`Озвучить: \$\{card\.front\}`\}/);
+  assert.match(preview, /aria-label=\{wordHidden[\s\S]*?: `Озвучить: \$\{card\.front\}`/);
   assert.match(preview, /className="deck-word-speech is-translation"[\s\S]*?onClick=\{\(\) => speak\(card\.back\)\}/);
   assert.match(preview, /: `Озвучить: \$\{card\.back\}`/);
   assert.doesNotMatch(preview, /setDecks|localStorage|removeItem|setSavedSession/);
@@ -610,6 +610,26 @@ test("reveals one deck preview translation without exposing the full list", asyn
   assert.match(source, /function toggleDeckTranslations\(deckId: string\)[\s\S]*?setRevealedDeckTranslationKeys/);
   assert.doesNotMatch(
     source.match(/function toggleDeckTranslation\(deckId[\s\S]*?\n {2}\}/)?.[0] ?? "",
+    /localStorage|setDecks|setSavedSession|setAnswers/,
+  );
+});
+
+test("hides and reveals deck preview words for a reverse self-check", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+  const preview = source.match(/<details className="deck-word-list">[\s\S]*?<\/details>/)?.[0] ?? "";
+
+  assert.match(source, /const \[hiddenDeckWordIds, setHiddenDeckWordIds\] = useState<string\[\]>\(\[\]\)/);
+  assert.match(source, /const \[revealedDeckWordKeys, setRevealedDeckWordKeys\] = useState<string\[\]>\(\[\]\)/);
+  assert.match(source, /function toggleDeckWords\(deckId: string\)/);
+  assert.match(source, /function toggleDeckWord\(deckId: string, cardId: string\)/);
+  assert.match(preview, /onClick=\{\(\) => toggleDeckWords\(deck\.id\)\}/);
+  assert.match(preview, /\? "Показать слова" : "Скрыть слова"/);
+  assert.match(preview, /wordHidden \? "•••••" : card\.front/);
+  assert.match(preview, /`Озвучить скрытое слово для: \$\{card\.back\}`/);
+  assert.match(preview, /onClick=\{\(\) => toggleDeckWord\(deck\.id, card\.id\)\}/);
+  assert.match(preview, /`Показать слово для: \$\{card\.back\}`/);
+  assert.doesNotMatch(
+    source.match(/function toggleDeckWords[\s\S]*?\n {2}\}/)?.[0] ?? "",
     /localStorage|setDecks|setSavedSession|setAnswers/,
   );
 });

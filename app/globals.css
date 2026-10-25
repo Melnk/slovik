@@ -180,7 +180,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .quick-study-link:hover { text-decoration: underline; }
 .deck-word-list { position: relative; z-index: 1; margin-top: 11px; color: var(--muted); font-size: 10px; }
 .deck-word-list summary { width: fit-content; color: var(--deck-accent); font-weight: 800; cursor: pointer; }
-.deck-word-visibility-button { display: flex; align-items: center; gap: 6px; margin-top: 9px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255, 255, 255, .55); color: var(--green-deep); font-size: 9px; font-weight: 800; cursor: pointer; }
+.deck-word-visibility-controls { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+.deck-word-visibility-button { display: flex; align-items: center; gap: 6px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255, 255, 255, .55); color: var(--green-deep); font-size: 9px; font-weight: 800; cursor: pointer; }
 .deck-word-visibility-button span { color: var(--orange); }
 .deck-word-visibility-button[aria-pressed="true"] { border-color: #8fb29a; background: #e6f0e7; }
 .deck-word-list ul { max-height: 142px; margin: 9px 0 0; padding: 4px 10px; overflow: auto; border: 1px solid var(--line); border-radius: 10px; background: rgba(255, 255, 255, .55); list-style: none; }
@@ -191,6 +192,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .deck-word-speech small { flex: 0 0 auto; color: #9aaba0; font-size: 8px; opacity: .65; }
 .deck-word-speech:hover small { color: var(--orange); opacity: 1; }
 .deck-word-speech.is-translation { justify-content: flex-end; text-align: right; }
+.deck-word-front { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; gap: 3px; }
 .deck-word-translation { display: flex; min-width: 0; flex-direction: column; align-items: flex-end; gap: 3px; }
 .deck-word-reveal-button { padding: 0; border: 0; background: none; color: var(--deck-accent); font-size: 8px; font-weight: 800; cursor: pointer; }
 .deck-word-reveal-button:hover { text-decoration: underline; }
