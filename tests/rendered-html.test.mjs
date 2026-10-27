@@ -580,6 +580,18 @@ test("pronounces either side of a word pair from the deck preview", async () => 
   assert.doesNotMatch(preview, /setDecks|localStorage|removeItem|setSavedSession/);
 });
 
+test("pronounces every deck preview pair in order and lets the user stop", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+  const preview = source.match(/<details className="deck-word-list">[\s\S]*?<\/details>/)?.[0] ?? "";
+
+  assert.match(preview, /onClick=\{\(\) => speakCards\(deck\.cards\)\}/);
+  assert.match(preview, /Озвучить все пары набора \$\{deck\.title\} по порядку/);
+  assert.match(preview, /Прослушать набор/);
+  assert.match(preview, /onClick=\{stopSpeaking\}/);
+  assert.match(preview, /Остановить озвучивание набора \$\{deck\.title\}/);
+  assert.doesNotMatch(preview, /setDecks|localStorage|removeItem|setSavedSession|setAnswers/);
+});
+
 test("hides deck preview translations for a quick self-check", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
   const preview = source.match(/<details className="deck-word-list">[\s\S]*?<\/details>/)?.[0] ?? "";

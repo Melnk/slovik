@@ -1396,6 +1396,24 @@ export default function StudyApp() {
                     <button
                       className="deck-word-visibility-button"
                       type="button"
+                      onClick={() => speakCards(deck.cards)}
+                      aria-label={`Озвучить все пары набора ${deck.title} по порядку`}
+                    >
+                      <span aria-hidden="true">◖))</span>
+                      Прослушать набор
+                    </button>
+                    <button
+                      className="deck-word-visibility-button"
+                      type="button"
+                      onClick={stopSpeaking}
+                      aria-label={`Остановить озвучивание набора ${deck.title}`}
+                    >
+                      <span aria-hidden="true">■</span>
+                      Остановить
+                    </button>
+                    <button
+                      className="deck-word-visibility-button"
+                      type="button"
                       onClick={() => toggleDeckWords(deck.id)}
                       aria-pressed={hiddenDeckWordIds.includes(deck.id)}
                     >
