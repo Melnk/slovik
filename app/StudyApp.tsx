@@ -220,6 +220,7 @@ export default function StudyApp() {
   const [finished, setFinished] = useState(false);
   const [revealedHintLetters, setRevealedHintLetters] = useState(0);
   const [autoPronounce, setAutoPronounce] = useState(false);
+  const [deckPreviewOrders, setDeckPreviewOrders] = useState<Record<string, string[]>>({});
   const [hiddenDeckWordIds, setHiddenDeckWordIds] = useState<string[]>([]);
   const [revealedDeckWordKeys, setRevealedDeckWordKeys] = useState<string[]>([]);
   const [hiddenDeckTranslationIds, setHiddenDeckTranslationIds] = useState<string[]>([]);
@@ -567,6 +568,33 @@ export default function StudyApp() {
   function toggleMissedTranslations() {
     setMissedTranslationsHidden((hidden) => !hidden);
     setRevealedMissedTranslationIds([]);
+  }
+
+  function getDeckPreviewCards(deck: Deck) {
+    const previewOrder = deckPreviewOrders[deck.id];
+    if (!previewOrder) return deck.cards;
+
+    const cardsById = new Map(deck.cards.map((card) => [card.id, card]));
+    return previewOrder
+      .map((cardId) => cardsById.get(cardId))
+      .filter((card): card is WordCard => Boolean(card));
+  }
+
+  function shuffleDeckPreview(deck: Deck) {
+    setDeckPreviewOrders((current) => {
+      const currentOrder = current[deck.id] ?? deck.cards.map((card) => card.id);
+      let nextOrder = shuffle(deck.cards.map((card) => card.id));
+
+      if (
+        nextOrder.length > 1
+        && nextOrder.every((cardId, index) => cardId === currentOrder[index])
+      ) {
+        nextOrder = [...nextOrder.slice(1), nextOrder[0]];
+      }
+
+      return { ...current, [deck.id]: nextOrder };
+    });
+    setNotice("Порядок слов перемешан");
   }
 
   function toggleDeckTranslations(deckId: string) {
@@ -1396,8 +1424,17 @@ export default function StudyApp() {
                     <button
                       className="deck-word-visibility-button"
                       type="button"
-                      onClick={() => speakCards(deck.cards)}
-                      aria-label={`Озвучить все пары набора ${deck.title} по порядку`}
+                      onClick={() => shuffleDeckPreview(deck)}
+                      aria-label={`Перемешать слова набора ${deck.title} для самопроверки`}
+                    >
+                      <span aria-hidden="true">↝</span>
+                      Перемешать список
+                    </button>
+                    <button
+                      className="deck-word-visibility-button"
+                      type="button"
+                      onClick={() => speakCards(getDeckPreviewCards(deck))}
+                      aria-label={`Озвучить все пары набора ${deck.title} в показанном порядке`}
                     >
                       <span aria-hidden="true">◖))</span>
                       Прослушать набор
@@ -1431,7 +1468,7 @@ export default function StudyApp() {
                     </button>
                   </div>
                   <ul>
-                    {deck.cards.map((card) => {
+                    {getDeckPreviewCards(deck).map((card) => {
                       const wordKey = `${deck.id}:${card.id}`;
                       const translationKey = `${deck.id}:${card.id}`;
                       const wordsHidden = hiddenDeckWordIds.includes(deck.id);

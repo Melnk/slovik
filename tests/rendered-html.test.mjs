@@ -563,7 +563,7 @@ test("previews every word pair in a deck without changing saved data", async () 
   const preview = source.match(/<details className="deck-word-list">[\s\S]*?<\/details>/)?.[0] ?? "";
 
   assert.match(preview, /<summary>Посмотреть слова<\/summary>/);
-  assert.match(preview, /deck\.cards\.map\(\(card\) =>/);
+  assert.match(preview, /getDeckPreviewCards\(deck\)\.map\(\(card\) =>/);
   assert.match(preview, /<span>\{wordHidden \? "•••••" : card\.front\}<\/span>/);
   assert.match(preview, /<strong>\{translationHidden \? "•••••" : card\.back\}<\/strong>/);
   assert.doesNotMatch(preview, /setDecks|localStorage|removeItem/);
@@ -584,12 +584,25 @@ test("pronounces every deck preview pair in order and lets the user stop", async
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
   const preview = source.match(/<details className="deck-word-list">[\s\S]*?<\/details>/)?.[0] ?? "";
 
-  assert.match(preview, /onClick=\{\(\) => speakCards\(deck\.cards\)\}/);
-  assert.match(preview, /Озвучить все пары набора \$\{deck\.title\} по порядку/);
+  assert.match(preview, /onClick=\{\(\) => speakCards\(getDeckPreviewCards\(deck\)\)\}/);
+  assert.match(preview, /Озвучить все пары набора \$\{deck\.title\} в показанном порядке/);
   assert.match(preview, /Прослушать набор/);
   assert.match(preview, /onClick=\{stopSpeaking\}/);
   assert.match(preview, /Остановить озвучивание набора \$\{deck\.title\}/);
   assert.doesNotMatch(preview, /setDecks|localStorage|removeItem|setSavedSession|setAnswers/);
+});
+
+test("shuffles only the deck preview order for an unbiased self-check", async () => {
+  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
+  const preview = source.match(/<details className="deck-word-list">[\s\S]*?<\/details>/)?.[0] ?? "";
+  const shufflePreview = source.match(/function shuffleDeckPreview[\s\S]*?\n {2}\}/)?.[0] ?? "";
+
+  assert.match(source, /const \[deckPreviewOrders, setDeckPreviewOrders\] = useState<Record<string, string\[\]>>\(\{\}\)/);
+  assert.match(source, /function getDeckPreviewCards\(deck: Deck\)/);
+  assert.match(shufflePreview, /shuffle\(deck\.cards\.map\(\(card\) => card\.id\)\)/);
+  assert.match(preview, /onClick=\{\(\) => shuffleDeckPreview\(deck\)\}/);
+  assert.match(preview, /Перемешать список/);
+  assert.doesNotMatch(shufflePreview, /setDecks|localStorage|removeItem|setSavedSession|setAnswers/);
 });
 
 test("hides deck preview translations for a quick self-check", async () => {
