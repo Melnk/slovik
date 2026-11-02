@@ -20,7 +20,7 @@ body {
   margin: 0;
   background: var(--cream);
   color: var(--ink);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
 button, input, textarea { font: inherit; }
@@ -403,4 +403,77 @@ kbd { display: inline-block; min-width: 22px; margin: 0 3px; padding: 3px 6px; b
 
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; transition: none !important; }
+}
+
+/* The daily workspace is the primary entry point for returning learners. */
+.today-section { width: min(1180px, calc(100% - 48px)); margin: 0 auto; padding: 64px 0 48px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 70px; align-items: center; }
+.today-copy h1 { margin: 18px 0 22px; font-family: Georgia, serif; font-size: clamp(34px, 4.6vw, 58px); font-weight: 500; line-height: 1.08; letter-spacing: -2px; }
+.today-copy h1 em { color: var(--green-deep); font-style: normal; }
+.today-copy > p { max-width: 480px; color: #5f7067; line-height: 1.65; font-size: 15px; }
+.today-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 18px; margin: 26px 0 16px; }
+.today-library-link { color: var(--green-deep); font-size: 13px; font-weight: 700; text-underline-offset: 4px; }
+.today-panel { padding: 30px; border: 1px solid #dce3d8; border-radius: 26px; background: rgba(255, 254, 250, .88); box-shadow: 0 18px 60px rgba(48, 62, 53, .05); }
+.today-stats { display: grid; grid-template-columns: 1fr 1fr; margin: 22px 0; }
+.today-stats div { min-width: 0; padding: 14px 0; }
+.today-stats div:nth-child(2n) { border-left: 1px solid var(--line); padding-left: 26px; }
+.today-stats div:nth-child(n+3) { border-top: 1px solid var(--line); }
+.today-stats dt { color: var(--muted); font-size: 12px; }
+.today-stats dd { margin: 9px 0 0; font-family: Georgia, serif; font-size: 40px; color: var(--green-deep); }
+.today-stats dd span { display: block; margin-top: 4px; color: var(--muted); font-family: Arial, sans-serif; font-size: 10px; line-height: 1.5; }
+.demo-label { display: block; max-width: 380px; color: #758177; font-size: 11px; line-height: 1.65; }
+.today-copy > .today-resume { color: var(--green-deep); font-size: 12px; }
+.schedule-help { padding-top: 14px; border-top: 1px solid var(--line); color: #5f7067; font-size: 11px; line-height: 1.6; }
+.schedule-help summary { cursor: pointer; color: var(--green-deep); font-weight: 700; }
+.library-section { padding-top: 32px; }
+.hero h2 { margin: 18px 0 23px; font-family: Georgia, serif; font-size: 54px; letter-spacing: -2px; line-height: 1.1; font-weight: 500; }
+.hero h2 em { color: var(--orange); font-style: normal; }
+.import-close { display: block; margin: 15px auto 0; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 12px; text-decoration: underline; text-underline-offset: 4px; }
+.deck-learning-status { display: flex; flex-wrap: wrap; gap: 7px; margin: 14px 0; font-size: 10px; }
+.deck-learning-status span { padding: 5px 8px; border-radius: 6px; background: rgba(255,255,255,.65); color: var(--green-deep); }
+.deck-learning-status small { width: 100%; color: #6a786f; line-height: 1.5; }
+.storage-warning { width: min(1180px, calc(100% - 32px)); margin: 20px auto; padding: 18px 22px; border: 1px solid #d6a784; border-radius: 14px; background: #fff2df; color: #704a2b; font-size: 13px; line-height: 1.6; }
+.storage-warning p { margin: 4px 0 12px; }
+.storage-warning button { margin: 0 12px 6px 0; padding: 8px 12px; border: 1px solid #c8a383; border-radius: 8px; background: var(--paper); color: inherit; cursor: pointer; font-size: 12px; }
+.autosave-status.has-error { color: #a14b2c; }
+.autosave-status.has-error i { background: #cc6c43; }
+.study-stage { padding-top: 22px; }
+.flashcard { height: min(380px, 44vh); min-height: 240px; }
+.flashcard-face strong { max-height: calc(100% - 80px); overflow: auto; scrollbar-width: thin; font-size: clamp(30px, 6vw, 58px); }
+.flashcard.has-long-text .flashcard-face strong { font-family: var(--font-geist-sans), Arial, sans-serif; font-size: clamp(18px, 3vw, 28px); line-height: 1.4; letter-spacing: -.4px; }
+.answer-actions:not(.is-visible) { display: none; }
+.answer-actions { margin-top: 20px; }
+.reveal-answer { margin-top: 20px; justify-content: center; }
+.study-extras { margin: 18px 0 0; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,254,250,.65); }
+.study-extras > summary { padding: 13px 18px; color: var(--green-deep); font-size: 12px; font-weight: 700; cursor: pointer; }
+.study-extras .study-assists { margin: 0; padding: 0 12px 16px; }
+.keyboard-help { margin-top: 18px; color: var(--muted); font-size: 11px; text-align: center; }
+.keyboard-help summary { cursor: pointer; }
+.keyboard-tip { line-height: 2.2; }
+.next-review-note { margin: 0 auto 22px !important; max-width: 440px; font-size: 12px !important; line-height: 1.6; }
+.toast { max-width: calc(100vw - 28px); line-height: 1.5; }
+@media (max-width: 900px) {
+  .today-section { gap: 28px; grid-template-columns: 1.1fr 1fr; }
+  .today-panel { padding: 22px; }
+}
+@media (max-width: 620px) {
+  .today-section { width: calc(100% - 30px); padding: 34px 0 20px; grid-template-columns: 1fr; gap: 24px; }
+  .today-copy h1 { font-size: 37px; letter-spacing: -1.5px; }
+  .today-copy > p { font-size: 14px; }
+  .today-panel { padding: 21px; border-radius: 20px; }
+  .today-stats { margin: 14px 0; }
+  .today-stats dd { font-size: 32px; }
+  .today-stats div { padding-block: 12px; }
+  .hero h2 { font-size: 36px; }
+  .study-topbar { height: 68px; }
+  .study-stage { padding-top: 16px; }
+  .study-meta { margin-bottom: 18px; gap: 10px; }
+  .flashcard { height: min(310px, 42svh); min-height: 210px; }
+  .flashcard-face { border-radius: 22px; padding: 28px 20px; }
+  .flashcard-face small { top: 23px; }
+  .flashcard-face em { bottom: 22px; }
+  .flashcard-face strong { font-size: 36px; max-height: calc(100% - 72px); }
+  .live-answer-stats { font-size: 10px; gap: 7px 14px; margin-bottom: 14px; }
+  .answer-button { height: 62px; }
+  .answer-button small { font-size: 9px; }
+  .storage-warning { padding: 15px; font-size: 12px; }
 }

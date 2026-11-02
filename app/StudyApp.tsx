@@ -1,40 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-
-type WordCard = {
-  id: string;
-  front: string;
-  back: string;
-};
-
-type Deck = {
-  id: string;
-  title: string;
-  cards: WordCard[];
-  createdAt: number;
-  lastScore: number;
-  sessions: number;
-  mistakes?: Record<string, number>;
-};
+import LibraryTools from "./LibraryTools";
+import { LIBRARY_LIMITS, serializeBackup, validateDecks, validateSession, type WordCard, type Deck, type SessionSnapshot } from "./lib/library";
+import { getDailyStats, getDeckLearningStats, getDueCards, getNewCards, scheduleAnswer } from "./lib/repetition";
+import { readLibrary, saveLibrary, LIBRARY_KEY } from "./lib/persistence";
 
 type View = "home" | "study";
 type StudyMode = "learn" | "review";
 
-type SessionSnapshot = {
-  deckId: string;
-  mode: StudyMode;
-  queue: string[];
-  cardIndex: number;
-  flipped: boolean;
-  reverse: boolean;
-  answers: boolean[];
-  reviewMastered: string[];
-  savedAt: number;
-};
-
-const STORAGE_KEY = "slovik-decks-v1";
-const SESSION_KEY = "slovik-active-session-v1";
 const QUICK_STUDY_CARDS = 10;
 const REVIEW_CARDS = 5;
 const DIFFICULT_REVIEW_CARDS = 3;
@@ -50,8 +24,8 @@ const DEMO_DECKS: Deck[] = [
     id: "travel-demo",
     title: "Английский: путешествия",
     createdAt: 1767225600000,
-    lastScore: 67,
-    sessions: 2,
+    lastScore: 0,
+    sessions: 0,
     cards: [
       ["journey", "путешествие"],
       ["cozy", "уютный"],
@@ -72,7 +46,7 @@ function parsePairs(value: string) {
     const line = source.trim();
     if (!line) return;
 
-    const divider = line.match(/\s+(?:-|–|—)\s+|[–—]/);
+    const divider = line.match(/\t+|\s+(?:-|–|—)\s+|[–—]/);
     if (!divider || divider.index === undefined) {
       skipped.push(line);
       return;
@@ -229,6 +203,15 @@ export default function StudyApp() {
   const [revealedMissedTranslationIds, setRevealedMissedTranslationIds] = useState<string[]>([]);
   const [savedSession, setSavedSession] = useState<SessionSnapshot | null>(null);
   const [notice, setNotice] = useState("");
+  const [editingDeck, setEditingDeck] = useState<Deck | null>(null);
+  const [showImporter, setShowImporter] = useState(false);
+  const [storageError, setStorageError] = useState("");
+  const [storageConflict, setStorageConflict] = useState(false);
+  const [recoveryOriginal, setRecoveryOriginal] = useState<string | null>(null);
+  const [now, setNow] = useState(0);
+  const storageBaselineRef = useRef<string | null>(null);
+  const storageBlockedRef = useRef(false);
+  const answerLockRef = useRef(false);
   const titleRef = useRef<HTMLInputElement>(null);
   const switchFramesRef = useRef<number[]>([]);
 
@@ -256,37 +239,28 @@ export default function StudyApp() {
   const savedStats = savedSession && savedDeck
     ? getSessionStats(savedSession)
     : null;
+  const dailyStats = getDailyStats(decks, now);
+  const learningStats = decks.map((deck) => ({ deck, ...getDeckLearningStats(deck, now) }));
+  const dueCount = learningStats.reduce((sum, deck) => sum + deck.dueCount, 0);
+  const newCount = learningStats.reduce((sum, deck) => sum + deck.newCount, 0);
+  const recommendedDeck = learningStats.find((deck) => deck.dueCount > 0)?.deck
+    ?? learningStats.find((deck) => deck.newCount > 0)?.deck;
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
-      let availableDecks = DEMO_DECKS;
       try {
-        const saved = window.localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const storedDecks = JSON.parse(saved) as Deck[];
-          if (Array.isArray(storedDecks)) {
-            availableDecks = storedDecks;
-            setDecks(storedDecks);
-          }
-        }
-
-        const savedProgress = window.localStorage.getItem(SESSION_KEY);
-        if (savedProgress) {
-          const snapshot = JSON.parse(savedProgress) as SessionSnapshot;
-          if (
-            snapshot
-            && Array.isArray(snapshot.queue)
-            && Array.isArray(snapshot.answers)
-            && availableDecks.some((deck) => deck.id === snapshot.deckId)
-          ) {
-            setSavedSession(snapshot);
-          } else {
-            window.localStorage.removeItem(SESSION_KEY);
-          }
-        }
+        const state = readLibrary(window.localStorage, DEMO_DECKS);
+        setDecks(state.decks);
+        setSavedSession(state.session);
+        storageBaselineRef.current = state.baseline;
+        storageBlockedRef.current = Boolean(state.error);
+        setStorageError(state.error);
+        setRecoveryOriginal(state.original);
       } catch {
-        // Keep the example deck if browser storage is unavailable or damaged.
+        storageBlockedRef.current = true;
+        setStorageError("Хранилище браузера недоступно. Скачайте резервную копию перед закрытием вкладки.");
       } finally {
+        setNow(Date.now());
         setLoaded(true);
       }
     }, 0);
@@ -295,12 +269,62 @@ export default function StudyApp() {
   }, []);
 
   useEffect(() => {
-    if (!loaded) return;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(decks));
-  }, [decks, loaded]);
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    const refresh = () => setNow(Date.now());
+    window.addEventListener("focus", refresh);
+    return () => { window.clearInterval(timer); window.removeEventListener("focus", refresh); };
+  }, []);
 
   useEffect(() => {
-    if (!loaded || view !== "study" || !activeDeckId || !currentCard || finished) return;
+    const handleStorage = (event: StorageEvent) => {
+      if ((event.key === LIBRARY_KEY || event.key === null) && event.newValue !== storageBaselineRef.current) {
+        storageBlockedRef.current = true;
+        setStorageConflict(true);
+        setStorageError("Библиотека изменена в другой вкладке. Скачайте копию текущих изменений, затем загрузите обновления.");
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  useEffect(() => {
+    if (!loaded || switching || storageBlockedRef.current) return;
+    let cancelled = false;
+    const session: SessionSnapshot | null = activeDeckId && currentCard
+      ? finished ? null : {
+        deckId: activeDeckId, mode: studyMode, queue: studyCards.map((card) => card.id),
+        cardIndex, flipped, reverse, answers, reviewMastered, savedAt: Date.now(),
+      }
+      : savedSession;
+    const persist = () => {
+      if (cancelled || storageBlockedRef.current) return;
+      try {
+        const result = saveLibrary(window.localStorage, { decks, session }, storageBaselineRef.current);
+        if (result.ok) {
+          storageBaselineRef.current = result.baseline;
+          setStorageError("");
+        } else {
+          setStorageError(result.error);
+          if (result.conflict) {
+            storageBlockedRef.current = true;
+            setStorageConflict(true);
+          }
+        }
+      } catch {
+        setStorageError("Хранилище браузера недоступно. Скачайте резервную копию перед закрытием вкладки.");
+      }
+    };
+    // Serialise writers across tabs where Web Locks is supported. The baseline
+    // check also protects stale tabs in browsers without that API.
+    if (navigator.locks) void navigator.locks.request("slovik-library", persist).catch(() => {
+      if (!cancelled) persist();
+    });
+    else persist();
+    return () => { cancelled = true; };
+  }, [activeDeckId, answers, cardIndex, currentCard, decks, finished, flipped, loaded, reverse, reviewMastered, savedSession, studyCards, studyMode, switching, view]);
+
+  useEffect(() => {
+    if (!loaded || switching || !activeDeckId || !currentCard || finished) return;
 
     const snapshot: SessionSnapshot = {
       deckId: activeDeckId,
@@ -314,10 +338,9 @@ export default function StudyApp() {
       savedAt: Date.now(),
     };
 
-    window.localStorage.setItem(SESSION_KEY, JSON.stringify(snapshot));
     const timeout = window.setTimeout(() => setSavedSession(snapshot), 0);
     return () => window.clearTimeout(timeout);
-  }, [activeDeckId, answers, cardIndex, currentCard, finished, flipped, loaded, reverse, reviewMastered, studyCards, studyMode, view]);
+  }, [activeDeckId, answers, cardIndex, currentCard, finished, flipped, loaded, reverse, reviewMastered, studyCards, studyMode, switching, view]);
 
   useEffect(() => {
     if (!notice) return;
@@ -409,16 +432,18 @@ export default function StudyApp() {
   }, []);
 
   const clearSavedSession = useCallback(() => {
-    window.localStorage.removeItem(SESSION_KEY);
     setSavedSession(null);
   }, []);
 
   const finishSession = useCallback((finalAnswers: boolean[]) => {
     if (!activeDeckId) return;
+    const completedAt = Date.now();
+    setNow(completedAt);
     const score = Math.round((finalAnswers.filter(Boolean).length / Math.max(finalAnswers.length, 1)) * 100);
     setDecks((current) => current.map((deck) => (
       deck.id === activeDeckId
-        ? { ...deck, lastScore: score, sessions: deck.sessions + 1 }
+        ? { ...deck, lastScore: score, sessions: Math.min(Number.MAX_SAFE_INTEGER, deck.sessions + 1),
+          history: [...(deck.history ?? []), { at: completedAt, correct: finalAnswers.filter(Boolean).length, total: finalAnswers.length }].slice(-LIBRARY_LIMITS.history) }
         : deck
     )));
     clearSavedSession();
@@ -434,6 +459,7 @@ export default function StudyApp() {
       setCardIndex((index) => index + 1);
       const unlockFrame = window.requestAnimationFrame(() => {
         setSwitching(false);
+        answerLockRef.current = false;
         switchFramesRef.current = [];
       });
       switchFramesRef.current = [unlockFrame];
@@ -484,20 +510,20 @@ export default function StudyApp() {
   }, [cardIndex, finished, studyCards.length, switching]);
 
   const markAnswer = useCallback((known: boolean) => {
-    if (finished || switching || !currentCard || !flipped) return;
+    if (finished || switching || answerLockRef.current || !currentCard || !flipped) return;
+    answerLockRef.current = true;
     const nextAnswers = [...answers, known];
     setAnswers(nextAnswers);
 
     setDecks((current) => current.map((deck) => {
       if (deck.id !== activeDeckId) return deck;
       const currentMistakes = deck.mistakes?.[currentCard.id] ?? 0;
-      if (known && currentMistakes === 0) return deck;
-
       const nextMistakes = { ...deck.mistakes };
-      const nextScore = known ? currentMistakes - 1 : currentMistakes + 1;
+      const nextScore = known ? currentMistakes - 1 : Math.min(Number.MAX_SAFE_INTEGER, currentMistakes + 1);
       if (nextScore > 0) nextMistakes[currentCard.id] = nextScore;
       else delete nextMistakes[currentCard.id];
-      return { ...deck, mistakes: nextMistakes };
+      return { ...deck, mistakes: nextMistakes,
+        review: { ...deck.review, [currentCard.id]: scheduleAnswer(deck.review?.[currentCard.id], known, Date.now()) } };
     }));
 
     if (studyMode === "review" && activeDeck) {
@@ -658,16 +684,19 @@ export default function StudyApp() {
   useEffect(() => {
     if (view !== "study" || finished) return;
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.metaKey || event.altKey || event.isComposing) return;
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest("input, textarea, select, [contenteditable=true]")) return;
       if (event.key === "Escape" && !event.repeat) {
         event.preventDefault();
         setView("home");
       }
-      if (event.code === "Space" && !switching) {
+      if (event.code === "Space" && !event.repeat && !switching && !target?.closest("button, a, summary")) {
         event.preventDefault();
         setFlipped((value) => !value);
       }
-      if (event.key === "ArrowLeft" && flipped && !switching) markAnswer(false);
-      if (event.key === "ArrowRight" && flipped && !switching) markAnswer(true);
+      if (event.key === "ArrowLeft" && !event.repeat && flipped && !switching) { event.preventDefault(); markAnswer(false); }
+      if (event.key === "ArrowRight" && !event.repeat && flipped && !switching) { event.preventDefault(); markAnswer(true); }
       if (event.code === "KeyH" && event.shiftKey && !event.repeat && !flipped && !switching && revealedHintLetters > 0) {
         event.preventDefault();
         setRevealedHintLetters(0);
@@ -719,6 +748,7 @@ export default function StudyApp() {
   }, [cardIndex, copyCards, currentCard, finished, flipped, markAnswer, postponeCard, revealAnswerHint, revealedHintLetters, reverse, shuffleRemainingCards, speak, speakPair, studyCards.length, studyMode, switching, toggleAutoPronounce, toggleStudyDirection, view]);
 
   function prepareStudy(deck: Deck) {
+    answerLockRef.current = false;
     clearSavedSession();
     setStudyMode("learn");
     setActiveDeckId(deck.id);
@@ -762,6 +792,7 @@ export default function StudyApp() {
   }
 
   function startReview(deck: Deck, focusedCards?: WordCard[]) {
+    answerLockRef.current = false;
     clearSavedSession();
     setStudyMode("review");
     setActiveDeckId(deck.id);
@@ -785,6 +816,7 @@ export default function StudyApp() {
   }
 
   function resumeSession(snapshot: SessionSnapshot) {
+    answerLockRef.current = false;
     const deck = decks.find((item) => item.id === snapshot.deckId);
     if (!deck) {
       clearSavedSession();
@@ -827,36 +859,95 @@ export default function StudyApp() {
     }
 
     const deck: Deck = {
-      id: `deck-${Date.now().toString(36)}`,
+      id: crypto.randomUUID(),
       title: title.trim() || "Новый набор",
-      cards: parsed.cards.map((card, index) => ({ ...card, id: `${Date.now()}-${index}` })),
+      cards: parsed.cards.map((card) => ({ ...card, id: crypto.randomUUID() })),
       createdAt: Date.now(),
       lastScore: 0,
       sessions: 0,
     };
 
+    try { serializeBackup(validateDecks([deck, ...decks])); }
+    catch (error) { setNotice(error instanceof Error ? error.message : "Не удалось создать набор"); return; }
     setDecks((current) => [deck, ...current]);
     setTitle("");
     setRawText("");
     setNotice(`Готово! Создано карточек: ${deck.cards.length}`);
-    window.setTimeout(() => startStudy(deck), 450);
+    setShowImporter(false);
+    startStudy(deck);
   }
 
   function renameDeck(deck: Deck) {
-    const nextTitle = window.prompt("Новое название набора", deck.title);
-    if (nextTitle === null) return;
+    setEditingDeck(deck);
+  }
 
-    const normalizedTitle = nextTitle.trim();
-    if (!normalizedTitle) {
-      setNotice("Название не может быть пустым");
-      return;
+  function saveEditedDeck(deck: Deck) {
+    if (storageConflict) throw new Error("Сначала загрузите обновления из другой вкладки.");
+    const nextDecks = validateDecks(decks.map((item) => item.id === deck.id ? deck : item));
+    serializeBackup(nextDecks);
+    setDecks(nextDecks);
+    if (savedSession?.deckId === deck.id && !validateSession(savedSession, nextDecks)) {
+      clearSavedSession(); setActiveDeckId(null); setStudyCards([]);
     }
-    if (normalizedTitle === deck.title) return;
+    setDeckPreviewOrders((current) => { const next = { ...current }; delete next[deck.id]; return next; });
+    setNotice("Набор сохранён. Прогресс остальных карточек сохранён.");
+  }
 
-    setDecks((current) => current.map((item) => (
-      item.id === deck.id ? { ...item, title: normalizedTitle } : item
-    )));
-    setNotice("Название набора изменено");
+  function restoreDecks(restored: Deck[]) {
+    if (storageConflict) throw new Error("Сначала скачайте текущую копию и загрузите обновления из другой вкладки.");
+    const existingIds = new Set(decks.map((deck) => deck.id));
+    const additions = restored.map((deck) => existingIds.has(deck.id)
+      ? { ...deck, id: crypto.randomUUID(), title: `${deck.title.slice(0, LIBRARY_LIMITS.title - 8)} (копия)` }
+      : deck);
+    const nextDecks = validateDecks([...decks, ...additions]);
+    serializeBackup(nextDecks);
+    if (recoveryOriginal !== null) {
+      // Keep an exact recovery record before an explicit restore replaces a bad v2 value.
+      window.localStorage.setItem(`slovik-recovery-${Date.now()}`, recoveryOriginal);
+    }
+    storageBlockedRef.current = false;
+    setRecoveryOriginal(null);
+    setStorageError("");
+    setDecks(nextDecks);
+  }
+
+  function reloadLibrary() {
+    try {
+      const state = readLibrary(window.localStorage, DEMO_DECKS);
+      if (state.error) { setStorageError(state.error); return; }
+      setDecks(state.decks);
+      setSavedSession(state.session);
+      setActiveDeckId(null);
+      setStudyCards([]);
+      storageBaselineRef.current = state.baseline;
+      storageBlockedRef.current = false;
+      setStorageConflict(false);
+      setStorageError("");
+      setView("home");
+      setNotice("Загружена актуальная библиотека");
+    } catch { setStorageError("Не удалось открыть хранилище браузера"); }
+  }
+
+  function downloadOriginal() {
+    if (recoveryOriginal === null) return;
+    const url = URL.createObjectURL(new Blob([recoveryOriginal], { type: "text/plain;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "slovik-recovery.txt";
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function keepReadableLibrary() {
+    try { restoreDecks([]); }
+    catch { setNotice("Не удалось сохранить исходную запись. Скачайте её перед восстановлением библиотеки."); }
+  }
+
+  function startDailyStudy(deck: Deck) {
+    const cards = [...getDueCards(deck, Date.now()), ...getNewCards(deck)].slice(0, QUICK_STUDY_CARDS);
+    if (!cards.length) { setNotice("На сегодня всё повторено. Можно потренироваться в любом наборе."); return; }
+    prepareStudy(deck);
+    setStudyCards(cards);
   }
 
   function copyDeck(deck: Deck) {
@@ -883,17 +974,29 @@ export default function StudyApp() {
     const deck = decks.find((item) => item.id === deckId);
     if (!deck || !window.confirm(`Удалить набор «${deck.title}»?`)) return;
     if (savedSession?.deckId === deckId) clearSavedSession();
+    if (activeDeckId === deckId) { setActiveDeckId(null); setStudyCards([]); }
     setDecks((current) => current.filter((item) => item.id !== deckId));
     setNotice("Набор удалён");
   }
 
   function focusImporter() {
     setView("home");
+    setShowImporter(true);
     window.setTimeout(() => {
       document.getElementById("importer")?.scrollIntoView({ behavior: "smooth", block: "center" });
       titleRef.current?.focus();
     }, 0);
   }
+
+  const storageBanner = storageError ? (
+    <div className="storage-warning" role="alert">
+      <strong>Изменения требуют внимания</strong><p>{storageError}</p>
+      {recoveryOriginal !== null && <button type="button" onClick={downloadOriginal}>Скачать исходную запись</button>}
+      {recoveryOriginal !== null && <button type="button" onClick={keepReadableLibrary}>Продолжить с доступными наборами</button>}
+      {view === "study" && <button type="button" onClick={() => setView("home")}>К резервной копии</button>}
+      {storageConflict && <button type="button" onClick={reloadLibrary}>Загрузить обновления из другой вкладки</button>}
+    </div>
+  ) : null;
 
   if (view === "study" && activeDeck && currentCard) {
     const score = Math.round((knownCount / Math.max(answers.length, 1)) * 100);
@@ -908,6 +1011,7 @@ export default function StudyApp() {
       : [];
     const progressCurrent = studyMode === "review" ? reviewMastered.length : cardIndex + 1;
     const progressTotal = studyMode === "review" ? reviewCardCount : studyCards.length;
+    const completedCards = studyMode === "review" ? reviewMastered.length : cardIndex;
 
     return (
       <main className="study-shell">
@@ -925,15 +1029,16 @@ export default function StudyApp() {
             {reverse ? "RU → EN" : "EN → RU"} <span aria-hidden="true">⇄</span>
           </button>
         </header>
+        {storageBanner}
 
         <section className="study-stage" aria-live="polite">
           {!finished ? (
             <>
-              <div className="autosave-status"><i /> Прогресс сохраняется автоматически</div>
+              <div className={`autosave-status ${storageError ? "has-error" : ""}`}><i /> {storageError ? "Изменения пока не сохранены" : "Прогресс сохраняется в этом браузере"}</div>
               <div className="study-meta">
                 <span><strong>{progressCurrent}</strong> / {progressTotal}</span>
-                <div className="progress-track" aria-label={`Прогресс: ${progressCurrent} из ${progressTotal}`}>
-                  <span style={{ width: `${(progressCurrent / Math.max(progressTotal, 1)) * 100}%` }} />
+                <div className="progress-track" aria-label={`Завершено: ${completedCards} из ${progressTotal}`}>
+                  <span style={{ width: `${(completedCards / Math.max(progressTotal, 1)) * 100}%` }} />
                 </div>
                 {studyMode === "review" ? (
                   <span className="review-loop-note">↻ сложные вернутся</span>
@@ -957,7 +1062,7 @@ export default function StudyApp() {
                 </div>
               )}
 
-              <button className={`flashcard ${flipped ? "is-flipped" : ""} ${switching ? "is-switching" : ""}`} type="button" onClick={() => { if (!switching) setFlipped((value) => !value); }} aria-label={flipped ? `Перевод: ${cardBack}` : `Слово: ${cardFront}. Нажмите, чтобы увидеть перевод`}>
+              <button className={`flashcard ${Math.max(cardFront.length, cardBack.length) > 80 ? "has-long-text" : ""} ${flipped ? "is-flipped" : ""} ${switching ? "is-switching" : ""}`} type="button" onClick={() => { if (!switching) setFlipped((value) => !value); }} aria-label={flipped ? `Перевод: ${cardBack}` : `Слово: ${cardFront}. Нажмите, чтобы увидеть перевод`}>
                 <span className="flashcard-inner">
                   <span className="flashcard-face flashcard-front">
                     <small>{reverse ? "ПЕРЕВОД" : "СЛОВО"}</small>
@@ -974,6 +1079,17 @@ export default function StudyApp() {
                 </span>
               </button>
 
+              {!flipped && <button className="primary-button reveal-answer" type="button" onClick={() => setFlipped(true)} disabled={switching}>Показать ответ <span aria-hidden="true">↵</span></button>}
+              <div className={`answer-actions ${flipped && !switching ? "is-visible" : ""}`}>
+                <button className="answer-button forgot" type="button" onClick={() => markAnswer(false)} disabled={!flipped || switching}>
+                  <span>←</span><strong>Пока не помню</strong><small>повторим через 10 минут</small>
+                </button>
+                <button className="answer-button knew" type="button" onClick={() => markAnswer(true)} disabled={!flipped || switching}>
+                  <strong>Вспомнил!</strong><small>планируем повторение</small><span>→</span>
+                </button>
+              </div>
+              <details className="study-extras">
+                <summary>Подсказки и озвучивание</summary>
               <div className="study-assists">
                 {!flipped && (
                   <button
@@ -1101,16 +1217,8 @@ export default function StudyApp() {
                   {autoPronounce ? "Автоозвучивание включено" : "Автоозвучивание"}
                 </button>
               </div>
-
-              <div className={`answer-actions ${flipped && !switching ? "is-visible" : ""}`}>
-                <button className="answer-button forgot" type="button" onClick={() => markAnswer(false)} disabled={!flipped || switching}>
-                  <span>←</span><strong>Пока не помню</strong><small>стрелка влево</small>
-                </button>
-                <button className="answer-button knew" type="button" onClick={() => markAnswer(true)} disabled={!flipped || switching}>
-                  <strong>Вспомнил!</strong><small>стрелка вправо</small><span>→</span>
-                </button>
-              </div>
-              <p className="keyboard-tip"><kbd>Esc</kbd> к наборам · <kbd>Пробел</kbd> перевернуть · <kbd>H</kbd> подсказка · <kbd>Shift</kbd>+<kbd>H</kbd> скрыть · <kbd>L</kbd> послушать ответ · <kbd>Shift</kbd>+<kbd>L</kbd> ответ медленно · <kbd>R</kbd> позже · <kbd>S</kbd> перемешать · <kbd>D</kbd> направление · <kbd>P</kbd> озвучить · <kbd>Shift</kbd>+<kbd>P</kbd> медленно · <kbd>B</kbd> озвучить пару · <kbd>Shift</kbd>+<kbd>B</kbd> пару медленно · <kbd>C</kbd> скопировать пару · <kbd>A</kbd> автоозвучивание · <kbd>←</kbd><kbd>→</kbd> ответить</p>
+              </details>
+              <details className="keyboard-help"><summary>Управление с клавиатуры</summary><p className="keyboard-tip"><kbd>Esc</kbd> к наборам · <kbd>Пробел</kbd> перевернуть · <kbd>H</kbd> подсказка · <kbd>Shift</kbd>+<kbd>H</kbd> скрыть · <kbd>L</kbd> послушать ответ · <kbd>Shift</kbd>+<kbd>L</kbd> ответ медленно · <kbd>R</kbd> позже · <kbd>S</kbd> перемешать · <kbd>D</kbd> направление · <kbd>P</kbd> озвучить · <kbd>Shift</kbd>+<kbd>P</kbd> медленно · <kbd>B</kbd> озвучить пару · <kbd>Shift</kbd>+<kbd>B</kbd> пару медленно · <kbd>C</kbd> скопировать пару · <kbd>A</kbd> автоозвучивание · <kbd>←</kbd><kbd>→</kbd> ответить</p></details>
             </>
           ) : (
             <div className="result-card">
@@ -1128,6 +1236,9 @@ export default function StudyApp() {
               <small className="score-caption">
                 {studyMode === "review" ? "точность ответов" : `лучшая серия: ${longestStreak}`}
               </small>
+              <p className="next-review-note">{getDeckLearningStats(activeDeck, now).dueCount > 0
+                ? "В наборе остались слова к повторению. Можно сделать ещё один короткий подход."
+                : "Следующий шаг запланирован. Вернись на экран «На сегодня», когда подойдёт время повторения."}</p>
               {studyMode === "learn" && missedCards.length > 0 && (
                 <details className="missed-word-list">
                   <summary>Посмотреть ошибки этого подхода</summary>
@@ -1254,6 +1365,7 @@ export default function StudyApp() {
             </div>
           )}
         </section>
+        {notice && <div className="toast" role="status">{notice}</div>}
       </main>
     );
   }
@@ -1266,18 +1378,47 @@ export default function StudyApp() {
           <span>словик</span>
         </a>
         <nav className="nav-links" aria-label="Основная навигация">
-          <a className="active" href="#sets">Мои наборы</a>
+          <a className="active" href="#top">На сегодня</a>
+          <a href="#sets">Мои наборы</a>
           <a href="#how">Как учиться</a>
           <a href="#install">На телефон</a>
         </nav>
-        <button className="topbar-create" type="button" onClick={focusImporter}><span>＋</span> Новый набор</button>
-        <div className="avatar" aria-label="Локальный профиль">О</div>
+        <button className="topbar-create" type="button" onClick={focusImporter} disabled={!loaded}><span>＋</span> Новый набор</button>
       </header>
+      {storageBanner}
 
-      <section className="hero" id="top">
+      <section className="today-section" id="top" aria-labelledby="today-heading">
+        <div className="today-copy">
+          <span className="eyebrow">НА СЕГОДНЯ{loaded ? ` · ${new Intl.DateTimeFormat("ru", { day: "numeric", month: "long" }).format(now)}` : ""}</span>
+          <h1 id="today-heading">Маленький шаг.<br /><em>Большой словарный запас.</em></h1>
+          <p>{dueCount > 0 ? `Пора освежить в памяти ${dueCount} слов. Начни с короткого подхода — до 10 карточек.`
+            : newCount > 0 ? "Новые слова уже ждут. Удели им пять минут — следующие повторения Словик запланирует сам."
+            : "На сегодня всё повторено. Добавь новые слова или потренируйся с любимым набором."}</p>
+          <div className="today-actions">
+            {savedSession && savedDeck ? <button className="primary-button compact" disabled={!loaded} type="button" onClick={() => resumeSession(savedSession)}>Продолжить подход →</button>
+              : recommendedDeck ? <button className="primary-button compact" disabled={!loaded} type="button" onClick={() => startDailyStudy(recommendedDeck)}>{dueCount ? "Повторить слова" : "Учить новые слова"} →</button>
+                : <button className="primary-button compact" type="button" onClick={focusImporter}>Создать набор →</button>}
+            <a href="#sets" className="today-library-link">Открыть библиотеку ↓</a>
+          </div>
+          {savedSession && savedDeck && savedStats && <p className="today-resume">{savedDeck.title} · пройдено {savedStats.completed} из {savedStats.total}</p>}
+          {decks.length === 1 && decks[0].id === "travel-demo" && decks[0].sessions === 0 && <span className="demo-label">Начни с примера «Английский: путешествия» или создай свой набор</span>}
+        </div>
+        <div className="today-panel">
+          <span className="step-label">УЧИМСЯ В СВОЁМ ТЕМПЕ</span>
+          <dl className="today-stats">
+            <div><dt>К повторению</dt><dd>{dueCount}<span>слов</span></dd></div>
+            <div><dt>Новых слов</dt><dd>{newCount}<span>в библиотеке</span></dd></div>
+            <div><dt>Ответов сегодня</dt><dd>{dailyStats.reviewed}<span>в завершённых подходах</span></dd></div>
+            <div><dt>Серия занятий</dt><dd>{dailyStats.streakDays}<span>{dailyStats.streakDays % 100 >= 11 && dailyStats.streakDays % 100 <= 14 ? "дней" : dailyStats.streakDays % 10 === 1 ? "день" : dailyStats.streakDays % 10 >= 2 && dailyStats.streakDays % 10 <= 4 ? "дня" : "дней"} подряд</span></dd></div>
+          </dl>
+          <details className="schedule-help"><summary>Как устроено повторение</summary><p>После верного ответа: через 1, 3, 7, 14, 30 и 60 дней. Если слово забыто — через 10 минут. Дополнительная практика до срока не откладывает повторение.</p><p>Дневные показатели считаются по завершённым подходам на этом устройстве.</p></details>
+        </div>
+      </section>
+
+      {(showImporter || (loaded && decks.length === 0)) && <section className="hero" id="new-deck">
         <div className="hero-copy">
           <span className="eyebrow">УЧИТЬСЯ — ЭТО ЛЕГКО</span>
-          <h1>Все новые слова.<br /><em>В одной колоде.</em></h1>
+          <h2>Все новые слова.<br /><em>В одной колоде.</em></h2>
           <p>Вставь свой список целиком — Словик сам разложит его по карточкам.</p>
           <div className="hero-note">
             <span className="note-spark">✦</span>
@@ -1296,7 +1437,7 @@ export default function StudyApp() {
             </span>
           </div>
           <label className="field-label" htmlFor="set-title">Название набора</label>
-          <input ref={titleRef} id="set-title" className="title-input" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Например, Английский для путешествий" />
+          <input ref={titleRef} id="set-title" className="title-input" value={title} maxLength={120} onChange={(event) => setTitle(event.target.value)} placeholder="Например, Английский для путешествий" />
           <label className="field-label field-label-row" htmlFor="word-list">
             <span>Список слов</span>
             <span>слово — перевод</span>
@@ -1316,14 +1457,15 @@ export default function StudyApp() {
               </button>
             </details>
           )}
-          <button className="primary-button" type="button" onClick={createDeck} disabled={parsed.cards.length === 0}>
+          <button className="primary-button" type="button" onClick={createDeck} disabled={!loaded || parsed.cards.length === 0}>
             Создать {parsed.cards.length || ""} карточки <span aria-hidden="true">→</span>
           </button>
           <p className="privacy-note"><span aria-hidden="true">✓</span> Наборы сохраняются прямо в браузере</p>
+          <button className="import-close" type="button" onClick={() => setShowImporter(false)}>Закрыть импорт</button>
         </div>
-      </section>
+      </section>}
 
-      <section className="library-section" id="sets">
+      <section className="library-section" id="sets" aria-busy={!loaded} inert={!loaded}>
         <div className="section-heading">
           <div>
             <span className="eyebrow">ТВОЯ БИБЛИОТЕКА</span>
@@ -1331,6 +1473,7 @@ export default function StudyApp() {
           </div>
           <button className="secondary-button" type="button" onClick={focusImporter}>＋ Создать новый</button>
         </div>
+        <LibraryTools decks={decks} editingDeck={editingDeck} onCloseEditor={() => setEditingDeck(null)} onEdit={saveEditedDeck} onRestore={restoreDecks} />
 
         {savedSession && savedDeck && savedStats && (
           <div className="resume-banner">
@@ -1376,12 +1519,17 @@ export default function StudyApp() {
                   <span className="deck-icon" aria-hidden="true">{deckIndex % 3 === 0 ? "Aa" : deckIndex % 3 === 1 ? "✦" : "あ"}</span>
                   <div className="deck-tools">
                     <button className="copy-button" type="button" onClick={() => copyDeck(deck)} aria-label={`Скопировать слова набора ${deck.title}`} title="Скопировать слова">⧉</button>
-                    <button className="edit-button" type="button" onClick={() => renameDeck(deck)} aria-label={`Изменить название набора ${deck.title}`}>✎</button>
+                    <button className="edit-button" type="button" onClick={() => renameDeck(deck)} aria-label={`Редактировать набор ${deck.title}`}>✎</button>
                     <button className="delete-button" type="button" onClick={() => deleteDeck(deck.id)} aria-label={`Удалить набор ${deck.title}`}>×</button>
                   </div>
                 </div>
                 <h3>{deck.title}</h3>
                 <p>{deck.cards.length} {deck.cards.length === 1 ? "карточка" : deck.cards.length < 5 ? "карточки" : "карточек"}</p>
+                <div className="deck-learning-status">
+                  <span>{getDeckLearningStats(deck, now).dueCount} к повторению</span>
+                  <span>{getDeckLearningStats(deck, now).newCount} новых</span>
+                  {getDeckLearningStats(deck, now).nextDueAt && <small>Следующее: {new Intl.DateTimeFormat("ru", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(getDeckLearningStats(deck, now).nextDueAt!)}</small>}
+                </div>
                 <div className="deck-progress">
                   <span><i style={{ width: `${deck.lastScore}%` }} /></span>
                   <small>

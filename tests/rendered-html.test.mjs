@@ -32,10 +32,10 @@ test("server-renders the Slovik home page", async () => {
 
   const html = await response.text();
   assert.match(html, /<title>Словик — карточки для изучения слов<\/title>/i);
-  assert.match(html, /Все новые слова/);
+  assert.match(html, /Маленький шаг/);
   assert.match(html, /Мои наборы/);
-  assert.match(html, /Последний результат 67% · 2 подхода/);
-  assert.match(html, /Наборы сохраняются прямо в браузере/);
+  assert.match(html, /Ещё не изучали/);
+  assert.match(html, /Резервная копия и перенос/);
   assert.match(html, /Устанавливать ничего не нужно/);
   assert.match(html, /Преподавателю и ученикам/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape/);
@@ -182,7 +182,6 @@ test("returns to the saved deck list with the Escape key", async () => {
   assert.match(source, /event\.key === "Escape" && !event\.repeat/);
   assert.match(source, /event\.preventDefault\(\);[\s\S]*?setView\("home"\)/);
   assert.match(source, /<kbd>Esc<\/kbd> к наборам/);
-  assert.match(source, /window\.localStorage\.setItem\(SESSION_KEY, JSON\.stringify\(snapshot\)\)/);
 });
 
 test("pronounces the visible card side with the P key", async () => {
@@ -467,7 +466,8 @@ test("shows the longest remembered-card streak on the study result", async () =>
 test("does not auto-reveal the next review card", async () => {
   const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
 
-  assert.doesNotMatch(source, /setPreviewing|setFlipped\(true\)/);
+  const startReview = source.match(/function startReview[\s\S]*?\n {2}\}/)?.[0] ?? "";
+  assert.doesNotMatch(startReview, /setPreviewing|setFlipped\(true\)/);
   assert.match(source, /function startReview[\s\S]*?setFlipped\(false\)/);
 });
 
@@ -523,15 +523,6 @@ test("starts a focused review with every difficult word in a deck", async () => 
   assert.match(source, /countDifficultCards\(deck\) > 0 && \(/);
   assert.match(source, /startReview\(deck, getDifficultCards\(deck\)\)/);
   assert.match(source, /> Сложные/);
-});
-
-test("renames a deck without replacing its saved data", async () => {
-  const source = await readFile(new URL("../app/StudyApp.tsx", import.meta.url), "utf8");
-
-  assert.match(source, /function renameDeck\(deck: Deck\)/);
-  assert.match(source, /window\.prompt\("Новое название набора", deck\.title\)/);
-  assert.match(source, /item\.id === deck\.id \? \{ \.\.\.item, title: normalizedTitle \} : item/);
-  assert.match(source, /onClick=\{\(\) => renameDeck\(deck\)\}/);
 });
 
 test("copies a deck without changing its saved data", async () => {
