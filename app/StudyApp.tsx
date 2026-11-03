@@ -1,10 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import LibraryTools from "./LibraryTools";
 import { LIBRARY_LIMITS, serializeBackup, validateDecks, validateSession, type WordCard, type Deck, type SessionSnapshot } from "./lib/library";
 import { getDailyStats, getDeckLearningStats, getDueCards, getNewCards, scheduleAnswer } from "./lib/repetition";
 import { readLibrary, saveLibrary, LIBRARY_KEY } from "./lib/persistence";
+import DeckShareDialog, { SharedDeckImport } from "./DeckSharing";
+import { createSharedDeck, decodeSharedDeck, sharedDeckId, type SharedDeck } from "./lib/sharing";
+import { commitSharedImport } from "./lib/share-import";
 
 type View = "home" | "study";
 type StudyMode = "learn" | "review";
@@ -126,6 +129,12 @@ function formatSessionCount(count: number) {
   return `${count} ${noun}`;
 }
 
+function wordCount(count: number) {
+  const lastTwo = count % 100;
+  const last = count % 10;
+  return `${count} ${lastTwo >= 11 && lastTwo <= 14 ? "слов" : last === 1 ? "слово" : last >= 2 && last <= 4 ? "слова" : "слов"}`;
+}
+
 function countCurrentStreak(answers: boolean[]) {
   let streak = 0;
 
@@ -204,6 +213,13 @@ export default function StudyApp() {
   const [savedSession, setSavedSession] = useState<SessionSnapshot | null>(null);
   const [notice, setNotice] = useState("");
   const [editingDeck, setEditingDeck] = useState<Deck | null>(null);
+  const [sharingDeck, setSharingDeck] = useState<Deck | null>(null);
+  const [shareBaseUrl, setShareBaseUrl] = useState("");
+  const [incomingDeck, setIncomingDeck] = useState<SharedDeck | null>(null);
+  const [incomingDeckId, setIncomingDeckId] = useState("");
+  const [incomingError, setIncomingError] = useState("");
+  const [incomingLoading, setIncomingLoading] = useState(false);
+  const [importingShared, setImportingShared] = useState(false);
   const [showImporter, setShowImporter] = useState(false);
   const [storageError, setStorageError] = useState("");
   const [storageConflict, setStorageConflict] = useState(false);
@@ -212,6 +228,10 @@ export default function StudyApp() {
   const storageBaselineRef = useRef<string | null>(null);
   const storageBlockedRef = useRef(false);
   const answerLockRef = useRef(false);
+  const sharedImportLockRef = useRef(false);
+  const sharedImportAbortRef = useRef<AbortController | null>(null);
+  const sharedLinkVersionRef = useRef(0);
+  const libraryRevisionRef = useRef(0);
   const titleRef = useRef<HTMLInputElement>(null);
   const switchFramesRef = useRef<number[]>([]);
 
@@ -245,6 +265,50 @@ export default function StudyApp() {
   const newCount = learningStats.reduce((sum, deck) => sum + deck.newCount, 0);
   const recommendedDeck = learningStats.find((deck) => deck.dueCount > 0)?.deck
     ?? learningStats.find((deck) => deck.newCount > 0)?.deck;
+  const alreadyAddedDeck = incomingDeckId ? decks.find((deck) => deck.id === incomingDeckId) : undefined;
+
+  useLayoutEffect(() => {
+    libraryRevisionRef.current += 1;
+  }, [decks, savedSession, activeDeckId, currentCard, finished, answers, cardIndex, flipped, reverse, reviewMastered, studyCards, studyMode, view]);
+
+  useEffect(() => {
+    let active = true;
+    const readSharedLink = async () => {
+      const version = ++sharedLinkVersionRef.current;
+      sharedImportAbortRef.current?.abort();
+      sharedImportAbortRef.current = null;
+      sharedImportLockRef.current = false;
+      setImportingShared(false);
+      const hash = window.location.hash;
+      setShareBaseUrl(window.location.origin);
+      setIncomingDeck(null);
+      setIncomingDeckId("");
+      setIncomingError("");
+      if (!hash.startsWith("#deck=")) { setIncomingLoading(false); return; }
+      setIncomingLoading(true);
+      setView("home");
+      try {
+        const shared = await decodeSharedDeck(hash.slice(6));
+        const id = await sharedDeckId(shared);
+        if (!active || version !== sharedLinkVersionRef.current || window.location.hash !== hash) return;
+        setIncomingDeck(shared);
+        setIncomingDeckId(id);
+      } catch (error) {
+        if (active && version === sharedLinkVersionRef.current && window.location.hash === hash) setIncomingError(error instanceof Error ? error.message : "Не удалось прочитать ссылку на набор");
+      } finally {
+        if (active && version === sharedLinkVersionRef.current && window.location.hash === hash) setIncomingLoading(false);
+      }
+    };
+    const timeout = window.setTimeout(() => { void readSharedLink(); }, 0);
+    window.addEventListener("hashchange", readSharedLink);
+    return () => {
+      active = false;
+      sharedLinkVersionRef.current += 1;
+      sharedImportAbortRef.current?.abort();
+      window.clearTimeout(timeout);
+      window.removeEventListener("hashchange", readSharedLink);
+    };
+  }, []);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -862,7 +926,7 @@ export default function StudyApp() {
       id: crypto.randomUUID(),
       title: title.trim() || "Новый набор",
       cards: parsed.cards.map((card) => ({ ...card, id: crypto.randomUUID() })),
-      createdAt: Date.now(),
+      createdAt: now,
       lastScore: 0,
       sessions: 0,
     };
@@ -944,10 +1008,90 @@ export default function StudyApp() {
   }
 
   function startDailyStudy(deck: Deck) {
-    const cards = [...getDueCards(deck, Date.now()), ...getNewCards(deck)].slice(0, QUICK_STUDY_CARDS);
+    const cards = [...getDueCards(deck, now), ...getNewCards(deck)].slice(0, QUICK_STUDY_CARDS);
     if (!cards.length) { setNotice("На сегодня всё повторено. Можно потренироваться в любом наборе."); return; }
     prepareStudy(deck);
     setStudyCards(cards);
+  }
+
+  function dismissSharedDeck() {
+    sharedLinkVersionRef.current += 1;
+    sharedImportAbortRef.current?.abort();
+    sharedImportAbortRef.current = null;
+    sharedImportLockRef.current = false;
+    setImportingShared(false);
+    setIncomingDeck(null);
+    setIncomingDeckId("");
+    setIncomingError("");
+    setIncomingLoading(false);
+    if (window.location.hash.startsWith("#deck=")) {
+      window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}#top`);
+    }
+  }
+
+  async function acceptSharedDeck(shared: SharedDeck, start: boolean) {
+    if (!loaded || switching || sharedImportLockRef.current || importingShared || incomingLoading) return;
+    if (storageBlockedRef.current || storageError || storageConflict) {
+      setIncomingError("Сначала реши проблему сохранения библиотеки. Набор по ссылке пока не добавлен.");
+      return;
+    }
+    const existing = decks.find((deck) => deck.id === incomingDeckId);
+    if (existing) {
+      dismissSharedDeck();
+      if (start) startStudy(existing);
+      return;
+    }
+    const expectedBaseline = storageBaselineRef.current;
+    const expectedRevision = libraryRevisionRef.current;
+    const acceptedVersion = sharedLinkVersionRef.current;
+    const acceptedHash = window.location.hash;
+    const controller = new AbortController();
+    sharedImportAbortRef.current = controller;
+    sharedImportLockRef.current = true;
+    setImportingShared(true);
+    setIncomingError("");
+    try {
+      const deck = { ...createSharedDeck(shared), id: incomingDeckId };
+      const nextDecks = validateDecks([deck, ...decks]);
+      serializeBackup(nextDecks);
+      const session: SessionSnapshot | null = activeDeckId && currentCard
+        ? finished ? null : {
+          deckId: activeDeckId, mode: studyMode, queue: studyCards.map((card) => card.id),
+          cardIndex, flipped, reverse, answers, reviewMastered, savedAt: now,
+        } : savedSession;
+      const persist = () => {
+        if (storageBlockedRef.current || storageBaselineRef.current !== expectedBaseline) {
+          throw new Error("Библиотека изменилась. Проверь обновления и попробуй добавить набор ещё раз.");
+        }
+        const result = commitSharedImport(window.localStorage, { decks: nextDecks, session }, {
+          expectedBaseline, expectedRevision, getRevision: () => libraryRevisionRef.current,
+          signal: controller.signal,
+          isCurrent: () => sharedLinkVersionRef.current === acceptedVersion && window.location.hash === acceptedHash,
+        });
+        if (!result.ok) {
+          setStorageError(result.error);
+          if (result.conflict) { storageBlockedRef.current = true; setStorageConflict(true); }
+          throw new Error(result.error);
+        }
+        storageBaselineRef.current = result.baseline;
+      };
+      if (navigator.locks) await navigator.locks.request("slovik-library", { signal: controller.signal }, persist);
+      else persist();
+      setDecks(nextDecks);
+      dismissSharedDeck();
+      setNotice(`Набор «${deck.title}» добавлен. Это твоя собственная копия.`);
+      if (start) startStudy(deck);
+    } catch (error) {
+      if (!controller.signal.aborted && sharedLinkVersionRef.current === acceptedVersion) {
+        setIncomingError(error instanceof Error ? error.message : "Не удалось добавить набор. Текущая библиотека сохранена.");
+      }
+    } finally {
+      if (sharedImportAbortRef.current === controller) {
+        sharedImportAbortRef.current = null;
+        sharedImportLockRef.current = false;
+        setImportingShared(false);
+      }
+    }
   }
 
   function copyDeck(deck: Deck) {
@@ -1387,11 +1531,14 @@ export default function StudyApp() {
       </header>
       {storageBanner}
 
+      <SharedDeckImport shared={incomingDeck} error={incomingError} loading={incomingLoading} alreadyAdded={Boolean(alreadyAddedDeck)} disabled={!loaded || switching || importingShared || Boolean(storageError)} onImport={(shared, start) => { void acceptSharedDeck(shared, start); }} onDismiss={dismissSharedDeck} />
+      <DeckShareDialog deck={sharingDeck} baseUrl={shareBaseUrl} onClose={() => setSharingDeck(null)} />
+
       <section className="today-section" id="top" aria-labelledby="today-heading">
         <div className="today-copy">
           <span className="eyebrow">НА СЕГОДНЯ{loaded ? ` · ${new Intl.DateTimeFormat("ru", { day: "numeric", month: "long" }).format(now)}` : ""}</span>
           <h1 id="today-heading">Маленький шаг.<br /><em>Большой словарный запас.</em></h1>
-          <p>{dueCount > 0 ? `Пора освежить в памяти ${dueCount} слов. Начни с короткого подхода — до 10 карточек.`
+          <p>{dueCount > 0 ? `Пора освежить в памяти ${wordCount(dueCount)}. Начни с короткого подхода — до 10 карточек.`
             : newCount > 0 ? "Новые слова уже ждут. Удели им пять минут — следующие повторения Словик запланирует сам."
             : "На сегодня всё повторено. Добавь новые слова или потренируйся с любимым набором."}</p>
           <div className="today-actions">
@@ -1406,7 +1553,7 @@ export default function StudyApp() {
         <div className="today-panel">
           <span className="step-label">УЧИМСЯ В СВОЁМ ТЕМПЕ</span>
           <dl className="today-stats">
-            <div><dt>К повторению</dt><dd>{dueCount}<span>слов</span></dd></div>
+            <div><dt>К повторению</dt><dd>{dueCount}<span>{wordCount(dueCount).split(" ")[1]}</span></dd></div>
             <div><dt>Новых слов</dt><dd>{newCount}<span>в библиотеке</span></dd></div>
             <div><dt>Ответов сегодня</dt><dd>{dailyStats.reviewed}<span>в завершённых подходах</span></dd></div>
             <div><dt>Серия занятий</dt><dd>{dailyStats.streakDays}<span>{dailyStats.streakDays % 100 >= 11 && dailyStats.streakDays % 100 <= 14 ? "дней" : dailyStats.streakDays % 10 === 1 ? "день" : dailyStats.streakDays % 10 >= 2 && dailyStats.streakDays % 10 <= 4 ? "дня" : "дней"} подряд</span></dd></div>
@@ -1525,6 +1672,7 @@ export default function StudyApp() {
                 </div>
                 <h3>{deck.title}</h3>
                 <p>{deck.cards.length} {deck.cards.length === 1 ? "карточка" : deck.cards.length < 5 ? "карточки" : "карточек"}</p>
+                <button className="share-deck-button" type="button" onClick={() => setSharingDeck(deck)} aria-label={`Поделиться набором ${deck.title}`}><span aria-hidden="true">↗</span> Поделиться набором</button>
                 <div className="deck-learning-status">
                   <span>{getDeckLearningStats(deck, now).dueCount} к повторению</span>
                   <span>{getDeckLearningStats(deck, now).newCount} новых</span>
@@ -1746,7 +1894,7 @@ export default function StudyApp() {
             <span className="install-icon teacher" aria-hidden="true">Aa</span>
             <div>
               <strong>Преподавателю и ученикам</strong>
-              <p>Нажми ⧉ у готового набора и отправь список в чат. Ученику останется вставить его в Словик и нажать «Создать карточки».</p>
+              <p>Нажми «Поделиться набором» и отправь ссылку ученику. Он увидит слова и начнёт учиться в своей библиотеке.</p>
               <small>У каждого сохраняются свои результаты на его устройстве.</small>
             </div>
           </article>

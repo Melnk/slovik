@@ -1,6 +1,6 @@
 {
   "name": "slovik",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "engines": {
     "node": ">=22.13.0"
@@ -10,7 +10,7 @@
     "build": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build",
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
     "test": "npm run build && node --experimental-strip-types --test tests/*.test.mjs",
-    "test:unit": "node --experimental-strip-types --test tests/library.test.mjs tests/persistence.test.mjs tests/repetition.test.mjs",
+    "test:unit": "node --experimental-strip-types --test tests/library.test.mjs tests/persistence.test.mjs tests/repetition.test.mjs tests/sharing.test.mjs tests/share-import.test.mjs",
     "typecheck": "tsc --noEmit --incremental false",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"
